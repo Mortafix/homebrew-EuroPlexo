@@ -1,4 +1,8 @@
 {
+
+	// Eurostreaming site (may change over time)
+	"eurostreaming": "https://eurostreaming.pet",
+
 	// folder where you have (or want) the series
 	"series_folder": "put here yuor series folder path",
 
