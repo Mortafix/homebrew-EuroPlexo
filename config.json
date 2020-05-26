@@ -1,0 +1,21 @@
+{
+	// folder where you have (or want) the series
+	"series_folder": "put here yuor series folder path",
+
+	// log file and path
+	// 1: YES, 0: NO
+	"log": 1,
+
+	// list of all the series you want to download
+	// [NAME,LINK,LANGUAGE,MODE]
+	// NAME: 
+	// 	1. if you already have the folder: NAME should be the folder name
+	//	2. if you don't have the folder yet: NAME will be the folder name
+	// LINK: EuroStreming episodes link
+	// LANGUAGE: ITA or ENG (it'll be SUB ITA)
+	// MODE:
+	//	1. FULL: download all the episode (available on EuroStreaming) missing in the folder
+	//	2. NEW:	 download only the episodes (available on EuroStreaming) after the newest in the folder	[default]
+	"series": [
+	]
+}
