@@ -54,6 +54,9 @@ def cmd_list():
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,url,lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
 	print(series_list) if series_list else print('No series found! Configure series.\n  1. Run script with --add\n  2. Modify "{}"'.format(os.path.join(SCRIPT_DIR,'config.json')))
 
+def cmd_log():
+	print(open(os.path.join(SCRIPT_DIR,'script.log')).read())
+
 def cmd_auto_scan():
 	already_config = [name for name,_,_,_ in SERIES]
 	sugg_series =[cmd_add_auto(k,v,'scan') if v else (k,None) for k,v in {s:get_suggestion_list(EUROSTREAMING,s) for s in [se for se in [d for _,d,_ in os.walk(SERIES_PATH) if d][0] if se not in already_config]}.items()]
@@ -125,15 +128,16 @@ def cmd_remove():
 		else: print(line,end='')
 	print('Successful! {} removed correctly.'.format(name))
 
-def cmd_help(): print(	'--{2:<11}-{2[0]:<5}add new tv serie [scan folder and add with automatic search]\n'
+def cmd_help(): print(	'--{0:<11}-{0[0]:<5}run configuration\n\n'
+						'--{2:<11}-{2[0]:<5}add new tv serie [scan folder and add with automatic search]\n'
 						'--{3:<11}-{7:<5}add new tv serie [automatic search]\n'
 						'--{4:<11}-{8:<5}add new tv serie [manual]\n\n'
 						'--{1:<11}-{1[0]:<5}series list\n'
 						'--{5:<11}-{5[0]:<5}remove tv serie\n\n'
 						'--{9:<11}-{10:<5}reset a corrupted or missing config file\n'
-						'--{0:<11}-{0[0]:<5}run configuration\n'
+						'--{11:<11}-{12:<5}show log file\n'
 						'--{6:<11}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg'))
 
 # MAIN SCRIPT -------------------------------------------
 
@@ -147,12 +151,12 @@ if __name__ == '__main__':
 	except FileNotFoundError: print('config file not found, recreating...'); cmd_reset(); exit()
 
 	# commands
-	commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset}
-	alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset}
+	commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log}
+	alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log}
 	try:
 		if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]]()
 		elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]]()
-		else: print('Command not found.'); cmd_help()
+		else: print('USAGE: europlexo [--option]'); cmd_help()
 	except IndexError:
 
 		# check folders
