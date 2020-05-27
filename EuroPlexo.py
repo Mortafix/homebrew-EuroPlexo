@@ -2,7 +2,7 @@ import subprocess as sp
 import os
 import json
 import shutil
-from re import sub,search
+from re import sub,search,escape
 from datetime import datetime
 import requests
 import sys
@@ -27,6 +27,13 @@ def check_site(url):
 	if not search(r'eurostreaming',url): print('Site [{}] is NOT from EuroStreaming, please check it.'.format(url)); return False
 	if requests.get(url).status_code != 200: print('Site [{}] is NOT working, please check it.'.format(url)); return False
 	return True
+
+def update_log(logline):
+	for line in fileinput.input(os.path.join(SCRIPT_DIR,'script.log'), inplace = 1):
+		match = search(r'(?:\[[0-9\.\s\:]+\]\s'+escape(log_line)+r')(?:\s\(([0-9]+)(?:\)))?',line)
+		n = match.group(1) if match and match.group(1) else 1
+		if not match: print(line,end='')
+	with open(os.path.join(SCRIPT_DIR,'script.log'),'a') as f: f.write('[{}] {} ({})'.format(get_current_datetime(),log_line,int(n)+1))
 
 # COMMANDS ----------------------------------------------
 
@@ -180,16 +187,12 @@ if __name__ == '__main__':
 					for l in direct_links:
 						sp.run(['youtube-dl','--no-check-certificate','-o',os.path.join(TMP_PATH,file_name),l], stderr=ERROR_LOG)
 						if not search(r'ERROR',READ_ERROR_LOG()):
-							log_line = '[{}] Downloaded episode of {} [{}×{}].'.format(get_current_datetime(),name,season,episode)
-							if LOG:
-								with open(script_log_path,'a+') as f: f.write(log_line+'\n')
-							print(log_line)
+							log_line = 'Downloaded episode of {} [{}×{}]'.format(name,season,episode)
+							if LOG: update_log(log_line), print(log_line)
 							break
 					if search(r'ERROR',READ_ERROR_LOG()):
-						log_line = '[{}] no links working for {} [{}×{}].'.format(get_current_datetime(),name,season,episode)
-						if LOG:
-							with open(script_log_path,'a+') as f: f.write(log_line+'\n')
-							print(log_line)
+						log_line = 'No link working for {} [{}×{}]'.format(name,season,episode)
+						if LOG: update_log(log_line), print(log_line)
 					else: 
 						# moving from tmp to series folder
 						tmp_file = [f for _,_,files in os.walk(TMP_PATH) for f in files if search(name.replace(' ','_'),f)][0]
@@ -199,10 +202,8 @@ if __name__ == '__main__':
 						destination_path = os.path.join(season_path,tmp_file)
 						shutil.move(tmp_file_path, destination_path)
 				except ValueError:
-					log_line = '[{}] No link found for {} [{}×{}].'.format(get_current_datetime(),name,season,episode)
-					if LOG:
-						with open(script_log_path,'a+') as f: f.write(log_line+'\n')
-						print(log_line)
+					log_line = 'No link found for {} [{}×{}]'.format(name,season,episode)
+					if LOG: update_log(log_line), print(log_line)
 				print()
 		
 		# deleting tmp folder
