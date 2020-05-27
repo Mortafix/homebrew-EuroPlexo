@@ -40,10 +40,15 @@ def update_log(logline):
 def cmd_config():
 	folder = SERIES_PATH if SERIES_PATH != 'put here yuor series folder path' else ''
 	path = input('Series folder [{}]: '.format(folder))
+	while not os.path.exists(path):
+		path = input('Folder not exists. Retry: ')
 	if path:
 		for line in fileinput.input(os.path.join(SCRIPT_DIR,'config.json'), inplace = 1): 
 			print(line.replace(SERIES_PATH,path),end='')
 	print('Successful! New configuration saved correctly.')
+
+def cmd_reset():
+	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// Eurostreaming site (may change over time)\n\t"eurostreaming": "https://eurostreaming.pet",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t"series": [\n\t]\n}')
 
 def cmd_list(): 
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,url,lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
@@ -125,9 +130,10 @@ def cmd_help(): print(	'--{2:<11}-{2[0]:<5}add new tv serie [scan folder and add
 						'--{4:<11}-{8:<5}add new tv serie [manual]\n\n'
 						'--{1:<11}-{1[0]:<5}series list\n'
 						'--{5:<11}-{5[0]:<5}remove tv serie\n\n'
+						'--{9:<11}-{10:<5}reset a corrupted or missing config file\n'
 						'--{0:<11}-{0[0]:<5}run configuration\n'
 						'--{6:<11}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs'))
 
 # MAIN SCRIPT -------------------------------------------
 
@@ -136,11 +142,13 @@ if __name__ == '__main__':
 	# grab info from config
 	SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 	try: SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR)
-	except KeyError: print('Config file corrupted, please download everything again!'); exit()
+	except KeyError: print('config file corrupted, please check your file or run --reset'); exit()
+	except json.decoder.JSONDecodeError: print('config file corrupted, please check your file or run --reset'); exit()
+	except FileNotFoundError: print('config file not found, recreating...'); cmd_reset(); exit()
 
 	# commands
-	commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove}
-	alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove}
+	commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset}
+	alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset}
 	try:
 		if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]]()
 		elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]]()
@@ -148,8 +156,8 @@ if __name__ == '__main__':
 	except IndexError:
 
 		# check folders
-		if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('Series folder not found! Configure folder path again.\n  1. Run script with --config\n  2. Modify "{}"'.format(os.path.join(SCRIPT_DIR,'config.json'))); exit()
-		if not SERIES: print('No series found! Configure series.\n  1. Run script with --add\n  2. Modify "{}"'.format(os.path.join(SCRIPT_DIR,'config.json'))); exit()
+		if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('Series folder not found!\nConfigure your folder path with --config'); exit()
+		if not SERIES: print('No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
 		if not all([check_site(site) for _,site,_,_ in SERIES]): exit()
 
 		# set tmp and log files

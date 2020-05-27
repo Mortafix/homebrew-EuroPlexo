@@ -1,5 +1,4 @@
 {
-
 	// Eurostreaming site (may change over time)
 	"eurostreaming": "https://eurostreaming.pet",
 
@@ -13,13 +12,13 @@
 	// list of all the series you want to download
 	// [NAME,LINK,LANGUAGE,MODE]
 	// NAME: 
-	// 	1. if you already have the folder: NAME should be the folder name
-	//	2. if you don't have the folder yet: NAME will be the folder name
+	//  1. if you already have the folder: NAME should be the folder name
+	//  2. if you don't have the folder yet: NAME will be the folder name
 	// LINK: EuroStreming episodes link
 	// LANGUAGE: ITA or ENG (it'll be SUB ITA)
 	// MODE:
-	//	1. FULL: download all the episode (available on EuroStreaming) missing in the folder
-	//	2. NEW:	 download only the episodes (available on EuroStreaming) after the newest in the folder	[default]
+	//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder
+	//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]
 	"series": [
 	]
 }
