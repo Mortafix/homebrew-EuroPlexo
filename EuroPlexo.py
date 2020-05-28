@@ -29,11 +29,13 @@ def check_site(url):
 	return True
 
 def update_log(logline):
+	n = 0
 	for line in fileinput.input(os.path.join(SCRIPT_DIR,'script.log'), inplace = 1):
 		match = search(r'(?:\[[0-9\.\s\:]+\]\s'+escape(log_line)+r')(?:\s\(([0-9]+)(?:\)))?',line)
-		n = match.group(1) if match and match.group(1) else 1
-		if not match: print(line,end='')
-	with open(os.path.join(SCRIPT_DIR,'script.log'),'a') as f: f.write('[{}] {} ({})'.format(get_current_datetime(),log_line,int(n)+1))
+		if match: n = int(match.group(1)) if match.group(1) else 1
+		else: print(line,end='')
+	last_line = '[{}] {} ({})\n'.format(get_current_datetime(),log_line,n+1) if n > 0 else '[{}] {}\n'.format(get_current_datetime(),log_line)
+	with open(os.path.join(SCRIPT_DIR,'script.log'),'a') as f: f.write(last_line)
 
 # COMMANDS ----------------------------------------------
 
@@ -82,8 +84,10 @@ def cmd_add_auto(name=None,series=None,add_mode='auto'):
 			n = input('Serie number: ')
 		if name: print()
 		result = [(series,url) for i,(series,url) in enumerate(series.items()) if i == int(n)-1][0]
+		if add_mode == 'auto': new_name = input('Folder name [empty for \'{}\']: '.format(result[0]))
+		new_name = new_name if new_name else result[0]
 		if name: return cmd_add_man(name,result[1],'scan')
-		else: cmd_add_man(result[0],result[1],add_mode)
+		else: cmd_add_man(new_name,result[1],add_mode)
 	elif not name: print('No serie found with \'{}\'! Retry.'.format(words_search))
 	else: return (None,None,None,None)
 
@@ -169,6 +173,7 @@ if __name__ == '__main__':
 		if not os.path.exists(TMP_PATH): os.mkdir(TMP_PATH)
 		error_log_path = os.path.join(TMP_PATH,'error.log')
 		script_log_path = os.path.join(SCRIPT_DIR,'script.log')
+		if not os.path.exists(script_log_path): open(script_log_path, 'a').close()
 		ERROR_LOG = open(error_log_path,'w+')
 		READ_ERROR_LOG = lambda : open(error_log_path).read()
 		
