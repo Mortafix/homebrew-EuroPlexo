@@ -44,4 +44,4 @@ TV_Series_Folder
 ```
 
 ## Sites Compatibility
-1. [EuroStraming](http://www.eurostreaming.pet/)
+1. [ES](http://www.eurostreaming.pet/)
