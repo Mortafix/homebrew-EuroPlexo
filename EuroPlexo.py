@@ -84,10 +84,11 @@ def cmd_add_auto(name=None,series=None,add_mode='auto'):
 			n = input('Serie number: ')
 		if name: print()
 		result = [(series,url) for i,(series,url) in enumerate(series.items()) if i == int(n)-1][0]
-		if add_mode == 'auto': new_name = input('Folder name [empty for \'{}\']: '.format(result[0]))
-		new_name = new_name if new_name else result[0]
-		if name: return cmd_add_man(name,result[1],'scan')
-		else: cmd_add_man(new_name,result[1],add_mode)
+		if add_mode == 'auto':
+			new_name = input('Folder name [empty for \'{}\']: '.format(result[0]))
+			new_name = new_name if new_name else result[0]
+			cmd_add_man(new_name,result[1],add_mode)
+		else: return cmd_add_man(name,result[1],'scan') 
 	elif not name: print('No serie found with \'{}\'! Retry.'.format(words_search))
 	else: return (None,None,None,None)
 
