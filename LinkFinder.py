@@ -25,7 +25,7 @@ class LinkFinder:
 
 	def _is_episode_out(self,season,episode):
 		'''Check if an episode is out'''
-		return season <= len(self.info) and episode <= self.info[season] 
+		return season <= max(self.info) and episode <= self.info[season] 
 
 	def _get_real_season_number(self,div):
 		'''Get the real season number (possible seasons missing)'''
