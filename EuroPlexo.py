@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# Author: Moris Doratiotto
+
 import subprocess as sp
 import os
 import json
