@@ -3,7 +3,11 @@
 Script in Python per scaricare automaticamente e in background le nuove puntate di serie tv, in cartelle specifiche e ordinate. Compatibile con Plex e altri sistemi di Media Center.
 
 ## Installazione
-A breve su Homebrew.
+Il pacchetto si può scaricare facilmente da [Homebrew](https://brew.sh/index_it).
+```bash
+brew tap Mortafix/EuroPlexo
+brew install europlexo
+```
 
 ## Setup
 1. Inizializzare la configurazione con il comando `europlexo --config`
@@ -13,10 +17,10 @@ A breve su Homebrew.
 	* Aggiunta guidata manuale della serie tv `europlexo --add-man`  
 
 **Attenzione**  
-Per la scansione automatica, la configurazione della cartella deve rispettare la [Struttura Cartella](#folder-structure).
+Per la scansione automatica, la configurazione della cartella deve rispettare la [Struttura Cartella](#Struttura-Cartella).
 
 ## Automatizzazione (Crontab)
-Per far girare lo script in maniera automatica, bisonga aggiungere un [Crontab]() con il task. Ogni riga di crontab ha 6 argomenti (5 per il datetime e 1 per il comando)  
+Per far girare lo script in maniera automatica, bisonga aggiungere un crontab con il task. Ogni riga di crontab ha 6 argomenti (5 per il datetime e 1 per il comando)  
 ```bash
 min hour month year day command
 30 0,8,16,20 * * * command # ['command' viene eseguito alle 0.30, 8.30, 16.30, 20.30 di ogni giorno]
@@ -24,10 +28,11 @@ min hour month year day command
 ```
 In aggiunta, un breve [video tutorial](https://www.loom.com/share/9ac5d5f25ea2490b879d1ec7b5bc0d60) sulla creazione di un task crontab.
 
-## Folder Structure
+## Struttura Cartella
 Per la scansione automatica, la cartella delle serie tv (che possiedi già) dovrà rispettare il seguente modello.
-L'unica accezione è il nome dei singoli episodi che dovranno comunque inziare con il numero dell'episodio (Es. `XX. nome_file_random.rnd`)
-```bash
+L'unica accezione è il nome dei singoli episodi che dovranno comunque inziare con il numero dell'episodio.  
+(Es. `XX. nome_file_random.rnd`)
+```
 TV_Series_Folder
 	Arrow
 		Stagione 1
@@ -43,5 +48,5 @@ TV_Series_Folder
 			2.  Arrow-LoSoCheNonSonoArrow-MaFlash42x42.swf
 ```
 
-## Sites Compatibility
+## Compatibilità Siti
 1. [ES](http://www.eurostreaming.pet/)
