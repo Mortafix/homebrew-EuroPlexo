@@ -159,81 +159,86 @@ def cmd_help(): print(	'--{0:<11}-{0[0]:<5}run configuration\n\n'
 
 if __name__ == '__main__':
 
-	# grab info from config
-	SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-	try: SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR)
-	except KeyError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
-	except json.decoder.JSONDecodeError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
-	except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
-
-	# commands
-	commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log}
-	alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log}
 	try:
-		if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]]()
-		elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]]()
-		else: print('USAGE: europlexo [--option]'); cmd_help()
-	except IndexError:
-
-		# check folders
-		if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('WARNING: Series folder not found!\nConfigure your folder path with --config'); exit()
-		if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
-		if not all([check_site(site) for _,site,_,_ in SERIES]): exit()
-
-		# set tmp and log files
-		TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
-		if not os.path.exists(TMP_PATH): os.mkdir(TMP_PATH)
-		error_log_path = os.path.join(TMP_PATH,'error.log')
-		script_log_path = os.path.join(SCRIPT_DIR,'script.log')
-		if not os.path.exists(script_log_path): open(script_log_path, 'a').close()
-		ERROR_LOG = open(error_log_path,'w+')
-		READ_ERROR_LOG = lambda : open(error_log_path).read()
-		
-		# grab info from the series folder
-		sf = ScanFolder(SERIES_PATH)
-
-		# run the script for every series
-		for name,link,language,mode in SERIES:
-			mode = mode if mode in ['NEW','FULL'] else 'NEW'
-			language = language.lower() == 'ENG'.lower()
-
-			# scan the folder
-			sf.scan_serie(name,mode)
-
-			# grab episodes missing
-			lf = LinkFinder(link,language)
-			eps = sf.episode_missing(lf.info)
 			
-			# download every episodes
-			for season,episode in eps:
-				file_name = '{0:02d}. {2}_{1}x{0}.{3}'.format(episode,season,name.replace(' ','_'),'%(ext)s')
-				try:
-					_,direct_links = lf.get_direct_links(season,episode)
-					print('Downloading {} [{}×{}]'.format(name,season,episode))
-					print('Link(s) found:')
-					print('\n'.join(['{:>3}. {}'.format(i+1,l) for i,l in enumerate(direct_links)]))
-					print()
-					for l in direct_links:
-						sp.run(['youtube-dl','--no-check-certificate','-o',os.path.join(TMP_PATH,file_name),l], stderr=ERROR_LOG)
-						if not search(r'ERROR',READ_ERROR_LOG()):
-							log_line = 'Downloaded episode of {} [{}×{}]'.format(name,season,episode)
+		# grab info from config
+		SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+		try: SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR)
+		except KeyError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
+		except json.decoder.JSONDecodeError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
+		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
+
+		# commands
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log}
+		try:
+			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]]()
+			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]]()
+			else: print('USAGE: europlexo [--option]'); cmd_help()
+		except IndexError:
+
+			# check folders
+			if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('WARNING: Series folder not found!\nConfigure your folder path with --config'); exit()
+			if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
+			if not all([check_site(site) for _,site,_,_ in SERIES]): exit()
+
+			# set tmp and log files
+			TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
+			if not os.path.exists(TMP_PATH): os.mkdir(TMP_PATH)
+			error_log_path = os.path.join(TMP_PATH,'error.log')
+			script_log_path = os.path.join(SCRIPT_DIR,'script.log')
+			if not os.path.exists(script_log_path): open(script_log_path, 'a').close()
+			ERROR_LOG = open(error_log_path,'w+')
+			READ_ERROR_LOG = lambda : open(error_log_path).read()
+			
+			# grab info from the series folder
+			sf = ScanFolder(SERIES_PATH)
+
+			# run the script for every series
+			for name,link,language,mode in SERIES:
+				mode = mode if mode in ['NEW','FULL'] else 'NEW'
+				language = language.lower() == 'ENG'.lower()
+
+				# scan the folder
+				sf.scan_serie(name,mode)
+
+				# grab episodes missing
+				lf = LinkFinder(link,language)
+				eps = sf.episode_missing(lf.info)
+				
+				# download every episodes
+				for season,episode in eps:
+					file_name = '{0:02d}. {2}_{1}x{0}.{3}'.format(episode,season,name.replace(' ','_'),'%(ext)s')
+					try:
+						_,direct_links = lf.get_direct_links(season,episode)
+						print('Downloading {} [{}×{}]'.format(name,season,episode))
+						print('Link(s) found:')
+						print('\n'.join(['{:>3}. {}'.format(i+1,l) for i,l in enumerate(direct_links)]))
+						print()
+						for l in direct_links:
+							sp.run(['youtube-dl','--no-check-certificate','-o',os.path.join(TMP_PATH,file_name),l], stderr=ERROR_LOG)
+							if not search(r'ERROR',READ_ERROR_LOG()):
+								log_line = 'Downloaded episode of {} [{}×{}]'.format(name,season,episode)
+								if LOG: update_log(log_line), print(log_line)
+								break
+						if search(r'ERROR',READ_ERROR_LOG()):
+							log_line = 'No link working for {} [{}×{}]'.format(name,season,episode)
 							if LOG: update_log(log_line), print(log_line)
-							break
-					if search(r'ERROR',READ_ERROR_LOG()):
-						log_line = 'No link working for {} [{}×{}]'.format(name,season,episode)
+						else: 
+							# moving from tmp to series folder
+							tmp_file = [f for _,_,files in os.walk(TMP_PATH) for f in files if search(name.replace(' ','_'),f)][0]
+							tmp_file_path = os.path.join(TMP_PATH,tmp_file)
+							season_path = sf.get_abspath_season(season)
+							if not os.path.exists(season_path): os.mkdir(season_path)
+							destination_path = os.path.join(season_path,tmp_file)
+							shutil.move(tmp_file_path, destination_path)
+					except ValueError:
+						log_line = 'No link found for {} [{}×{}]'.format(name,season,episode)
 						if LOG: update_log(log_line), print(log_line)
-					else: 
-						# moving from tmp to series folder
-						tmp_file = [f for _,_,files in os.walk(TMP_PATH) for f in files if search(name.replace(' ','_'),f)][0]
-						tmp_file_path = os.path.join(TMP_PATH,tmp_file)
-						season_path = sf.get_abspath_season(season)
-						if not os.path.exists(season_path): os.mkdir(season_path)
-						destination_path = os.path.join(season_path,tmp_file)
-						shutil.move(tmp_file_path, destination_path)
-				except ValueError:
-					log_line = 'No link found for {} [{}×{}]'.format(name,season,episode)
-					if LOG: update_log(log_line), print(log_line)
-				print()
-		
-		# deleting tmp folder
-		shutil.rmtree(TMP_PATH)
+					print()
+			
+			# deleting tmp folder
+			shutil.rmtree(TMP_PATH)
+
+	# Keyboard Interrupt handler		
+	except KeyboardInterrupt: print('\nInterrupt detected. Saving (?) and exit.') 
