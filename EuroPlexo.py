@@ -5,9 +5,10 @@ import subprocess as sp
 import os
 import json
 import shutil
-from re import sub,search,escape
+from re import sub,search,escape,match
 from datetime import datetime
 import requests
+from requests.exceptions import ConnectionError, InvalidURL
 import sys
 import fileinput
 
@@ -27,8 +28,10 @@ def read_config(cfg_path):
 	return cfg_json['series_folder'],cfg_json['series'],cfg_json['log'],cfg_json['eurostreaming']
 
 def check_site(url):
-	if not search(r'eurostreaming',url): print('Site [{}] is NOT from EuroStreaming, please check it.'.format(url)); return False
-	if requests.get(url).status_code != 200: print('Site [{}] is NOT working, please check it.'.format(url)); return False
+	try:
+		if not search(r'eurostreaming',url): print('Site [{}] is NOT from EuroStreaming, please check it.'.format(url)); return False
+		if requests.get(url).status_code != 200: print('Site [{}] is NOT working, please check it.'.format(url)); return False
+	except (ConnectionError, InvalidURL): print('Site [{}] is NOT working, please check it.'.format(url)); return False
 	return True
 
 def update_log(logline):
@@ -39,6 +42,9 @@ def update_log(logline):
 		else: print(line,end='')
 	last_line = '[{}] {} ({})\n'.format(get_current_datetime(),log_line,n+1) if n > 0 else '[{}] {}\n'.format(get_current_datetime(),log_line)
 	with open(os.path.join(SCRIPT_DIR,'script.log'),'a') as f: f.write(last_line)
+
+def add_http(url):
+	return "http://"+url if not match(r'http',url) else url
 
 # COMMANDS ----------------------------------------------
 
@@ -60,7 +66,9 @@ def cmd_list():
 	print(series_list) if series_list else print('No series found! Configure series.\n  1. Run script with --add\n  2. Modify "{}"'.format(os.path.join(SCRIPT_DIR,'config.json')))
 
 def cmd_log():
-	print(open(os.path.join(SCRIPT_DIR,'script.log')).read())
+	script_path = os.path.join(SCRIPT_DIR,'script.log')
+	if not os.path.exists(script_path): open(script_path, 'a').close()
+	print(open(script_path).read())
 
 def cmd_auto_scan():
 	already_config = [name for name,_,_,_ in SERIES]
@@ -101,9 +109,9 @@ def cmd_add_man(name=None,url=None,add_mode='man'):
 		if add_mode == 'auto': print('ERROR: Serie already exists.'); return -1
 		name = input('ERROR: Folder already exists.\nFolder [Serie] name: ')
 	print()
-	if not url: url = input('EuroStreaming url: ')
+	if not url: url = add_http(input('EuroStreaming url: '))
 	while not check_site(url):
-		url = input('EuroStreaming url: ')
+		url = add_http(input('EuroStreaming url: '))
 	if url.lower() in [site.lower() for _,site,_,_ in SERIES]: print('WARNING: Site already exists.')
 	if add_mode == 'man': print()
 	lang = ''
@@ -154,9 +162,9 @@ if __name__ == '__main__':
 	# grab info from config
 	SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 	try: SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR)
-	except KeyError: print('config file corrupted, please check your file or run --reset'); exit()
-	except json.decoder.JSONDecodeError: print('config file corrupted, please check your file or run --reset'); exit()
-	except FileNotFoundError: print('config file not found, recreating...'); cmd_reset(); exit()
+	except KeyError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
+	except json.decoder.JSONDecodeError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
+	except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
 
 	# commands
 	commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log}
@@ -168,8 +176,8 @@ if __name__ == '__main__':
 	except IndexError:
 
 		# check folders
-		if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('Series folder not found!\nConfigure your folder path with --config'); exit()
-		if not SERIES: print('No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
+		if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('WARNING: Series folder not found!\nConfigure your folder path with --config'); exit()
+		if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
 		if not all([check_site(site) for _,site,_,_ in SERIES]): exit()
 
 		# set tmp and log files

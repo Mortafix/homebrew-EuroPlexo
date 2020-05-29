@@ -61,6 +61,7 @@ class Europlexo < Formula
     venv.pip_install resources
 
     # My python dependencies
+    (libexec/"bin").install "config.json"
     (libexec/"bin").install "ScanFolder.py"
     (libexec/"bin").install "LinkFinder.py"
     (libexec/"bin").install "SeriesFinder.py"
