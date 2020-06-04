@@ -48,7 +48,7 @@ def add_http(url):
 
 # COMMANDS ----------------------------------------------
 
-def cmd_config():
+def cmd_config(*args):
 	folder = SERIES_PATH if SERIES_PATH != 'put here yuor series folder path' else ''
 	path = input('Series folder [{}]: '.format(folder))
 	while not os.path.exists(path):
@@ -58,27 +58,27 @@ def cmd_config():
 			print(line.replace(SERIES_PATH,path),end='')
 	print('Successful! New configuration saved correctly.')
 
-def cmd_reset():
+def cmd_reset(*args):
 	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// Eurostreaming site (may change over time)\n\t"eurostreaming": "https://eurostreaming.pet",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t"series": [\n\t]\n}')
 
-def cmd_list(): 
+def cmd_list(*args): 
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,url,lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
-	print(series_list) if series_list else print('No series found! Configure series.\n  1. Run script with --add\n  2. Modify "{}"'.format(os.path.join(SCRIPT_DIR,'config.json')))
+	print(series_list) if series_list else print('No series found!\nRun -aa (or --add-auto)')
 
-def cmd_log():
+def cmd_log(*args):
 	script_path = os.path.join(SCRIPT_DIR,'script.log')
 	if not os.path.exists(script_path): open(script_path, 'a').close()
 	print(open(script_path).read())
 
-def cmd_auto_scan():
+def cmd_auto_scan(*args):
 	already_config = [name for name,_,_,_ in SERIES]
-	sugg_series =[cmd_add_auto(k,v,'scan') if v else (k,None) for k,v in {s:get_suggestion_list(EUROSTREAMING,s) for s in [se for se in [d for _,d,_ in os.walk(SERIES_PATH) if d][0] if se not in already_config]}.items()]
+	sugg_series =[cmd_add_auto(name=k,series=v,add_mode='scan') if v else (k,None) for k,v in {s:get_suggestion_list(EUROSTREAMING,s) for s in [se for se in [d for _,d,_ in os.walk(SERIES_PATH) if d][0] if se not in already_config]}.items()]
 	print('\n## AUTOSCAN COMPLETE ##')
 	series_toprint = ['{}. {} [{}] [{},{}]'.format(i+1,serie,site,lang,mode) if site else 'No series found for \'{}\'! Try with --add-auto.'.format(serie) for i,(serie,site,lang,mode) in enumerate(sorted(sugg_series,key=lambda x:(x[1] is None,x[1]))) if serie]
 	if series_toprint: print('\n'.join(series_toprint))
 	print('\n{} serie(s) added to download.'.format(len(series_toprint)))
 
-def cmd_add_auto(name=None,series=None,add_mode='auto'):
+def cmd_add_auto(*args,name=None,series=None,add_mode='auto'):
 	if not series:
 		words_search = input('Serie name: ')
 		series = get_suggestion_list(EUROSTREAMING,words_search)
@@ -98,12 +98,12 @@ def cmd_add_auto(name=None,series=None,add_mode='auto'):
 		if add_mode == 'auto':
 			new_name = input('Folder name [empty for \'{}\']: '.format(result[0]))
 			new_name = new_name if new_name else result[0]
-			cmd_add_man(new_name,result[1],add_mode)
-		else: return cmd_add_man(name,result[1],'scan') 
+			cmd_add_man(name=new_name,url=result[1],add_mode=add_mode)
+		else: return cmd_add_man(name=name,url=result[1],add_mode='scan') 
 	elif not name: print('No serie found with \'{}\'! Retry.'.format(words_search))
 	else: return (None,None,None,None)
 
-def cmd_add_man(name=None,url=None,add_mode='man'):
+def cmd_add_man(*args,name=None,url=None,add_mode='man'):
 	if not name: name = input('Folder [Serie] name: ')
 	while name.lower() in [name.lower() for name,_,_,_ in SERIES]:
 		if add_mode == 'auto': print('ERROR: Serie already exists.'); return -1
@@ -130,7 +130,7 @@ def cmd_add_man(name=None,url=None,add_mode='man'):
 		print('\nSuccessful! {} [{}] [{},{}] added correctly.'.format(name,url,lang,mode))
 	else: print(); return name,url,lang,mode
 
-def cmd_remove():
+def cmd_remove(*args):
 	cmd_list(); print()
 	n = int(input('Serie number to remove: '))
 	while n < 1 or n > len(SERIES): n = int(input('ERROR! Number must be between 1 and {}: '.format(len(SERIES))))
@@ -144,16 +144,29 @@ def cmd_remove():
 		else: print(line,end='')
 	print('Successful! {} removed correctly.'.format(name))
 
-def cmd_help(): print(	'--{0:<11}-{0[0]:<5}run configuration\n\n'
+def cmd_link(*args):
+	if not SERIES: cmd_list(); return 0
+	if not args[0]: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
+	try:
+		name,url,_,_ = SERIES[int(args[0][0])-1]
+		lk = LinkFinder(url)
+		(season,episode),links = lk.get_direct_links()
+		print('Link(s) for {} [{}×{}]\n\n{}'.format(name,season,episode,'\n'.join(links)))
+	except ValueError: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.')
+	except IndexError: print('Series number ({}) out of list!\nShould be between 1 and {}.'.format(int(args[0][0]),len(SERIES)))
+	finally: return 0
+
+def cmd_help(*args): print(	'--{0:<11}-{0[0]:<5}run configuration\n\n'
 						'--{2:<11}-{2[0]:<5}add new tv serie [scan folder and add with automatic search]\n'
 						'--{3:<11}-{7:<5}add new tv serie [automatic search]\n'
 						'--{4:<11}-{8:<5}add new tv serie [manual]\n\n'
+						'--{13:<11}-{14:<5}get link last episode for a serie\n'
 						'--{1:<11}-{1[0]:<5}series list\n'
 						'--{5:<11}-{5[0]:<5}remove tv serie\n\n'
 						'--{9:<11}-{10:<5}reset a corrupted or missing config file\n'
 						'--{11:<11}-{12:<5}show log file\n'
 						'--{6:<11}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl'))
 
 # MAIN SCRIPT -------------------------------------------
 
@@ -169,11 +182,11 @@ if __name__ == '__main__':
 		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
 
 		# commands
-		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log}
-		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log}
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link}
 		try:
-			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]]()
-			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]]()
+			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]](sys.argv[2:])
+			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]](sys.argv[2:])
 			else: print('USAGE: europlexo [--option]'); cmd_help()
 		except IndexError:
 
