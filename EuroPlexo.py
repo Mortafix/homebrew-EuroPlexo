@@ -18,6 +18,9 @@ from SeriesFinder import *
 
 # RANDOM FUNCTIONS --------------------------------------
 
+def int_to_hr_size(size):
+	return '{:.0f} MB'.format(size) if size < 1024 else '{:.2f} GB'.format(size / float(1 << 10))
+
 def get_current_datetime():
 	now = datetime.now()
 	return '{:02d}.{:02d}.{} {:02d}:{:02d}'.format(now.day,now.month,now.year,now.hour,now.minute)
@@ -37,14 +40,20 @@ def check_site(url):
 def update_log(logline):
 	n = 0
 	for line in fileinput.input(os.path.join(SCRIPT_DIR,'script.log'), inplace = 1):
-		match = search(r'(?:\[[0-9\.\s\:]+\]\s'+escape(log_line)+r')(?:\s\(([0-9]+)(?:\)))?',line)
+		match = search(r'(?:\[[0-9\.\s\:]+\]\s'+escape(logline)+r')(?:\s\{([0-9]+)(?:\}))?',line)
 		if match: n = int(match.group(1)) if match.group(1) else 1
 		else: print(line,end='')
-	last_line = '[{}] {} ({})\n'.format(get_current_datetime(),log_line,n+1) if n > 0 else '[{}] {}\n'.format(get_current_datetime(),log_line)
+	last_line = '[{}] {} {{{}}}\n'.format(get_current_datetime(),logline,n+1) if n > 0 else '[{}] {}\n'.format(get_current_datetime(),logline)
 	with open(os.path.join(SCRIPT_DIR,'script.log'),'a') as f: f.write(last_line)
 
 def add_http(url):
 	return "http://"+url if not match(r'http',url) else url
+
+def get_size_last_file(series_folder_path,serie_name,season,episode):
+	path = os.path.join(series_folder_path,serie_name,'Stagione {}'.format(season))
+	last_file = [file for file in list(os.walk(path))[0][2] if match(r'0?'+str(episode),file)][0]
+	try: return last_file,os.path.getsize(os.path.join(path,last_file)) / float (1 << 20)
+	except IndexError: return '',0
 
 # COMMANDS ----------------------------------------------
 
@@ -148,25 +157,75 @@ def cmd_link(*args):
 	if not SERIES: cmd_list(); return 0
 	if not args[0]: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
 	try:
-		name,url,_,_ = SERIES[int(args[0][0])-1]
-		lk = LinkFinder(url)
+		name,url,sub,_ = SERIES[int(args[0][0])-1]
+		sub = sub == 'ENG'
+		lk = LinkFinder(url,sub)
 		(season,episode),links = lk.get_direct_links()
-		print('Link(s) for {} [{}×{}]\n\n{}'.format(name,season,episode,'\n'.join(links)))
+		print('Link(s) for {} [{}×{}]\n\n{}'.format(name,season,episode,'\n'.join(['({1}) {0}'.format(l,int_to_hr_size(s)) for l,s in links])))
 	except ValueError: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.')
 	except IndexError: print('Series number ({}) out of list!\nShould be between 1 and {}.'.format(int(args[0][0]),len(SERIES)))
 	finally: return 0
 
+def cmd_redown(*args):
+	if not SERIES: cmd_list(); return 0
+	if not args[0]: print('USAGE: -re (or --redownload) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
+	try:
+		name,url,sub,mode = SERIES[int(args[0][0])-1]
+		sub = sub == 'ENG'
+		sf = ScanFolder(SERIES_PATH)
+		sf.scan_serie(name,mode)
+		lk = LinkFinder(url,sub=sub)
+		(season,episode),links = lk.get_direct_links()
+		last_episode_file_name,last_episode_file_size = get_size_last_file(SERIES_PATH,name,season,episode)
+		season_path = sf.get_abspath_season(season)
+		print('{} [{}×{}]\n\n({}) {}\n{}'.format(name,season,episode,int_to_hr_size(last_episode_file_size),last_episode_file_name,'\n'.join(['({1}) {0}'.format(l,int_to_hr_size(s)) for l,s in links])))
+		if max([s for l,s in links]) > last_episode_file_size + 25:
+			print('\nRedownloading {} [{}×{}] ({} -> {})\n'.format(name,season,episode,int_to_hr_size(last_episode_file_size),int_to_hr_size(links[0][1])))
+			download_episode(name,season,episode,links,redown=last_episode_file_size,season_path=season_path) # redownloading
+		else: print('\nNothing to redownload.\n') 
+	except ValueError: print('USAGE: -re (or --redownload [series-number-from-your-list]\nRun -l (or --list) to see series numbers.')
+	except IndexError: print('Series number ({}) out of list!\nShould be between 1 and {}.'.format(int(args[0][0]),len(SERIES)))
+	finally: return 0
+
+def cmd_redown_all(*args):
+	if not SERIES: cmd_list(); return 0
+	for i in range(1,len(SERIES)+1): cmd_redown([i])
+
 def cmd_help(*args): print(	'--{0:<11}-{0[0]:<5}run configuration\n\n'
 						'--{2:<11}-{2[0]:<5}add new tv serie [scan folder and add with automatic search]\n'
 						'--{3:<11}-{7:<5}add new tv serie [automatic search]\n'
-						'--{4:<11}-{8:<5}add new tv serie [manual]\n\n'
-						'--{13:<11}-{14:<5}get link last episode for a serie\n'
+						'--{4:<11}-{8:<5}add new tv serie [manual]\n'
 						'--{1:<11}-{1[0]:<5}series list\n'
 						'--{5:<11}-{5[0]:<5}remove tv serie\n\n'
+						'--{13:<11}-{14:<5}get links last episode for a serie\n'
+						'--{15:<11}-{16:<5}redownload last episode for a serie (if higher quality)\n'
+						'--{17:<11}-{18:<5}redownload last episode for all series (if higher quality)\n\n'
 						'--{9:<11}-{10:<5}reset a corrupted or missing config file\n'
 						'--{11:<11}-{12:<5}show log file\n'
 						'--{6:<11}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra'))
+
+# DOWNLOADING FUNCTION ----------------------------------
+
+def download_episode(serie,season,episode,direct_links,redown=None,season_path=None):
+	file_name = '{0:02d}. {2}_{1}x{0}.{3}'.format(episode,season,serie.replace(' ','_'),'%(ext)s')
+	for l,s in direct_links:
+		sp.run(['youtube-dl','--no-check-certificate','-o',os.path.join(TMP_PATH,file_name),l], stderr=ERROR_LOG)
+		if not search(r'ERROR',READ_ERROR_LOG()):
+			log_line = 'Downloaded episode of {} [{}×{}] ({})'.format(serie,season,episode,int_to_hr_size(s)) if not redown else 'Redownloaded episode of {} [{}×{}] ({} -> {})'.format(serie,season,episode,int_to_hr_size(redown),int_to_hr_size(s))
+			if LOG: update_log(log_line), print(log_line)
+			break
+	if search(r'ERROR',READ_ERROR_LOG()):
+		log_line = 'No link working for {} [{}×{}]'.format(serie,season,episode)
+		if LOG: update_log(log_line), print(log_line)
+	else: 
+		# moving from tmp to series folder
+		tmp_file = [f for _,_,files in os.walk(TMP_PATH) for f in files if search(escape(serie.replace(' ','_')),f)][0]
+		tmp_file_path = os.path.join(TMP_PATH,tmp_file)
+		season_path = sf.get_abspath_season(season) if not season_path else season_path
+		if not os.path.exists(season_path): os.mkdir(season_path)
+		destination_path = os.path.join(season_path,tmp_file)
+		shutil.move(tmp_file_path, destination_path)
 
 # MAIN SCRIPT -------------------------------------------
 
@@ -181,28 +240,29 @@ if __name__ == '__main__':
 		except json.decoder.JSONDecodeError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
 		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
 
+		# set tmp and log files
+		TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
+		if not os.path.exists(TMP_PATH): os.mkdir(TMP_PATH)
+		error_log_path = os.path.join(TMP_PATH,'error.log')
+		script_log_path = os.path.join(SCRIPT_DIR,'script.log')
+		if not os.path.exists(script_log_path): open(script_log_path, 'a').close()
+		ERROR_LOG = open(error_log_path,'w+')
+		READ_ERROR_LOG = lambda : open(error_log_path).read()
+
 		# commands
-		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link}
-		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link}
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all}
 		try:
 			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]](sys.argv[2:])
 			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]](sys.argv[2:])
 			else: print('USAGE: europlexo [--option]'); cmd_help()
+		# script (no command)
 		except IndexError:
 
 			# check folders
 			if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('WARNING: Series folder not found!\nConfigure your folder path with --config'); exit()
 			if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
 			if not all([check_site(site) for _,site,_,_ in SERIES]): exit()
-
-			# set tmp and log files
-			TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
-			if not os.path.exists(TMP_PATH): os.mkdir(TMP_PATH)
-			error_log_path = os.path.join(TMP_PATH,'error.log')
-			script_log_path = os.path.join(SCRIPT_DIR,'script.log')
-			if not os.path.exists(script_log_path): open(script_log_path, 'a').close()
-			ERROR_LOG = open(error_log_path,'w+')
-			READ_ERROR_LOG = lambda : open(error_log_path).read()
 			
 			# grab info from the series folder
 			sf = ScanFolder(SERIES_PATH)
@@ -221,37 +281,19 @@ if __name__ == '__main__':
 				
 				# download every episodes
 				for season,episode in eps:
-					file_name = '{0:02d}. {2}_{1}x{0}.{3}'.format(episode,season,name.replace(' ','_'),'%(ext)s')
 					try:
 						_,direct_links = lf.get_direct_links(season,episode)
 						print('Downloading {} [{}×{}]'.format(name,season,episode))
 						print('Link(s) found:')
-						print('\n'.join(['{:>3}. {}'.format(i+1,l) for i,l in enumerate(direct_links)]))
-						print()
-						for l in direct_links:
-							sp.run(['youtube-dl','--no-check-certificate','-o',os.path.join(TMP_PATH,file_name),l], stderr=ERROR_LOG)
-							if not search(r'ERROR',READ_ERROR_LOG()):
-								log_line = 'Downloaded episode of {} [{}×{}]'.format(name,season,episode)
-								if LOG: update_log(log_line), print(log_line)
-								break
-						if search(r'ERROR',READ_ERROR_LOG()):
-							log_line = 'No link working for {} [{}×{}]'.format(name,season,episode)
-							if LOG: update_log(log_line), print(log_line)
-						else: 
-							# moving from tmp to series folder
-							tmp_file = [f for _,_,files in os.walk(TMP_PATH) for f in files if search(name.replace(' ','_'),f)][0]
-							tmp_file_path = os.path.join(TMP_PATH,tmp_file)
-							season_path = sf.get_abspath_season(season)
-							if not os.path.exists(season_path): os.mkdir(season_path)
-							destination_path = os.path.join(season_path,tmp_file)
-							shutil.move(tmp_file_path, destination_path)
+						print('\n'.join(['{0:>3}. ({2}) {1}\n'.format(i+1,l,int_to_hr_size(s)) for i,(l,s) in enumerate(direct_links)]))
+						download_episode(name,season,episode,direct_links) # downloading
 					except ValueError:
 						log_line = 'No link found for {} [{}×{}]'.format(name,season,episode)
 						if LOG: update_log(log_line), print(log_line)
 					print()
 			
-			# deleting tmp folder
-			shutil.rmtree(TMP_PATH)
+		# deleting tmp folder
+		shutil.rmtree(TMP_PATH)
 
 	# Keyboard Interrupt handler		
 	except KeyboardInterrupt: print('\nInterrupt detected. Saving (?) and exit.') 

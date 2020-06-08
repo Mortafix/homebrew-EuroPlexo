@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup as bs
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from re import findall,search
 from dispatcher.DeltaBit import get_DeltaBit_download_link
 from dispatcher.TurboVid import get_TurboVid_download_link
@@ -46,11 +47,17 @@ class LinkFinder:
 		sites = {'DeltaBit': get_DeltaBit_download_link,'Turbovid': get_TurboVid_download_link}
 		return sites[site](link) if site in sites else None
 
+	def _get_file_size(self,url):
+		'''Get file size for video quality'''
+		requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+		try: return int(requests.head(url,allow_redirects=True,verify=False).headers.get('Content-Length')) / float(1 << 20)
+		except TypeError: return 0
+
 	def get_direct_links(self,season=None,episode=None):
 		'''Get all the direct links for an episode, if not specified get last'''
 		if season and episode and not self._is_episode_out(season,episode): raise ValueError('Episode {}×{} isn\'t out yet'.format(season,episode))
 		else: season,episode,crypted_links = self._get_crypted_links(season,episode)
-		direct_links = [l for l in [self._site_dispacher(l,n) for l,n in crypted_links] if l]
+		direct_links = sorted([(l,self._get_file_size(l)) for l in [self._site_dispacher(l,n) for l,n in crypted_links] if l],key=lambda x:x[1],reverse=True)
 		if direct_links: return (season,episode),direct_links
 		else: raise ValueError('No link found for episode {}×{}.'.format(season,episode))
 
