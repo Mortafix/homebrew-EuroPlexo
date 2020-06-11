@@ -20,7 +20,7 @@ def print_pretty_formatting(suggestions):
 # --------------------
 
 if __name__ == '__main__':
-	eurostreaming_url = "https://eurostreaming.pet"
+	eurostreaming_url = "https://eurostreaming.date"
 	path = '/Users/Moris/Desktop/test'
 	result = cmd_auto_scan()
 	#print(cmd_add_auto())

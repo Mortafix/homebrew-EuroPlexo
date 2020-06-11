@@ -62,7 +62,7 @@ class LinkFinder:
 		else: raise ValueError('No link found for episode {}×{}.'.format(season,episode))
 
 if __name__ == '__main__':
-	lk = LinkFinder("https://eurostreaming.pet/arrow-episodi-2/")
+	lk = LinkFinder("https://eurostreaming.date/arrow-episodi-2/")
 	print(lk)
 	links = lk.get_direct_links()
 	print(links)
