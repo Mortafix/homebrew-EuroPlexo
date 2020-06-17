@@ -52,6 +52,8 @@ class Europlexo < Formula
     sha256 "3018294ebefce6572a474f0604c2021e33b3fd8006ecd11d62107a5d2a963527"
   end
 
+  require "fileutils"
+
   def install
     ENV.append "CPPFLAGS", "-I#{MacOS.sdk_path_if_needed}/usr/include/ffi"
 
@@ -69,6 +71,7 @@ class Europlexo < Formula
 
     # Final Script
     (libexec/"bin").install "EuroPlexo.py" => "europlexo"
+    FileUtils.chmod("+x", libexec/"bin/europlexo")
     (bin/"europlexo").write_env_script libexec/"bin/europlexo", :PATH => "#{libexec}/bin:$PATH"
   end
 
