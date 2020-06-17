@@ -50,7 +50,7 @@ class LinkFinder:
 	def _get_file_size(self,url):
 		'''Get file size for video quality'''
 		requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-		try: return int(requests.head(url,allow_redirects=True,verify=False).headers.get('Content-Length')) / float(1 << 20)
+		try: return int(requests.head(url,allow_redirects=True,verify=False).headers.get('Content-Length')) / 1000**2
 		except TypeError: return 0
 
 	def get_direct_links(self,season=None,episode=None):

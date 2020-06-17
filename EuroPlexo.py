@@ -19,7 +19,7 @@ from SeriesFinder import *
 # RANDOM FUNCTIONS --------------------------------------
 
 def int_to_hr_size(size):
-	return '{:.0f} MB'.format(size) if size < 1024 else '{:.2f} GB'.format(size / float(1 << 10))
+	return '{:.0f} MB'.format(size) if size < 1000 else '{:.2f} GB'.format(size / 1000)
 
 def get_current_datetime():
 	now = datetime.now()
@@ -52,7 +52,7 @@ def add_http(url):
 def get_size_last_file(series_folder_path,serie_name,season,episode):
 	path = os.path.join(series_folder_path,serie_name,'Stagione {}'.format(season))
 	last_file = [file for file in list(os.walk(path))[0][2] if match(r'0?'+str(episode),file)][0]
-	try: return last_file,os.path.getsize(os.path.join(path,last_file)) / float (1 << 20)
+	try: return last_file,os.path.getsize(os.path.join(path,last_file)) / 1000**2
 	except IndexError: return '',0
 
 # COMMANDS ----------------------------------------------
