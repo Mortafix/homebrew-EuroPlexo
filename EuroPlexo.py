@@ -218,11 +218,12 @@ def download_episode(serie,season,episode,direct_links,redown=None,season_path=N
 	if search(r'ERROR',READ_ERROR_LOG()):
 		log_line = 'No link working for {} [{}×{}]'.format(serie,season,episode)
 		if LOG: update_log(log_line), print(log_line)
+	# moving from tmp to series folder
 	else: 
-		# moving from tmp to series folder
+		season_path = sf.get_abspath_season(season) if not season_path else season_path
+		if redown: os.remove(os.path.join(season_path,[f for _,_,files in os.walk(season_path) for f in files if search(r'{}\.\s'.format(episode),f)][0])) # delete redowloaded episode
 		tmp_file = [f for _,_,files in os.walk(TMP_PATH) for f in files if search(escape(serie.replace(' ','_')),f)][0]
 		tmp_file_path = os.path.join(TMP_PATH,tmp_file)
-		season_path = sf.get_abspath_season(season) if not season_path else season_path
 		if not os.path.exists(season_path): os.mkdir(season_path)
 		destination_path = os.path.join(season_path,tmp_file)
 		shutil.move(tmp_file_path, destination_path)
