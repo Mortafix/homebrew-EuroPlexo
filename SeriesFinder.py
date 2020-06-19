@@ -16,12 +16,3 @@ def get_suggestion_list(eurostreaming_url,search):
 
 def print_pretty_formatting(suggestions):
 	print('\n'.join(['{:<4}{} [{}]'.format(i+1,series,url) for i,(series,url) in enumerate(suggestions.items())]))
-
-# --------------------
-
-if __name__ == '__main__':
-	eurostreaming_url = "https://eurostreaming.date"
-	path = '/Users/Moris/Desktop/test'
-	result = cmd_auto_scan()
-	#print(cmd_add_auto())
-	print(result)

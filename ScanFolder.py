@@ -42,12 +42,3 @@ class ScanFolder():
 	def get_abspath_season(self,season_number):
 		'''Get the absolute path for a specific season'''
 		return '/'.join([self.path,self.serie_folder_name,sub('##',str(season_number),self.season_folder_name)])
-
-if __name__ == '__main__':
-	PATH = 'test'
-	site_info = {1:15,2:16,3:25,4:10,5:14,6:17,7:5}
-	sf = ScanFolder(PATH)
-	sf.scan_serie('The Flash','NEW')
-	eps = sf.episode_missing(site_info)
-	print(eps)
-	print(sf)

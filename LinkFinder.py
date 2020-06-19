@@ -60,9 +60,3 @@ class LinkFinder:
 		direct_links = sorted([(l,self._get_file_size(l)) for l in [self._site_dispacher(l,n) for l,n in crypted_links] if l],key=lambda x:x[1],reverse=True)
 		if direct_links: return (season,episode),direct_links
 		else: raise ValueError('No link found for episode {}×{}.'.format(season,episode))
-
-if __name__ == '__main__':
-	lk = LinkFinder("https://eurostreaming.date/arrow-episodi-2/")
-	print(lk)
-	links = lk.get_direct_links()
-	print(links)
