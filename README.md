@@ -49,4 +49,4 @@ TV_Series_Folder
 ```
 
 ## Compatibilità Siti
-1. [ES](http://www.eurostreaming.pet/)
+1. [ES](http://www.eurostreaming.life/)
