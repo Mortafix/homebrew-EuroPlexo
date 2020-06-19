@@ -270,6 +270,8 @@ if __name__ == '__main__':
 
 			# run the script for every series
 			for name,link,language,mode in SERIES:
+
+				print('Searching new episodes for {} [{}]'.format(name,language))
 				mode = mode if mode in ['NEW','FULL'] else 'NEW'
 				language = language.lower() == 'ENG'.lower()
 
@@ -279,7 +281,7 @@ if __name__ == '__main__':
 				# grab episodes missing
 				lf = LinkFinder(link,language)
 				eps = sf.episode_missing(lf.info)
-				
+
 				# download every episodes
 				for season,episode in eps:
 					try:
