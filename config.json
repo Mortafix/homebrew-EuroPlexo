@@ -1,6 +1,6 @@
 {
-	// Eurostreaming site (may change over time)
-	"eurostreaming": "https://eurostreaming.life",
+	// manul Eurostreaming site(may change over time, keep empty for auto retrieve)
+	"eurostreaming": "",
 
 	// folder where you have (or want) the series
 	"series_folder": "put here yuor series folder path",

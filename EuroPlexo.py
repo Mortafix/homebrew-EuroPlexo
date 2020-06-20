@@ -30,6 +30,10 @@ def read_config(cfg_path):
 		cfg_json = json.loads(''.join([l for l in [sub('\t|\n','',l) for l in cfg.readlines()] if l and l[0] != '/']))
 	return cfg_json['series_folder'],cfg_json['series'],cfg_json['log'],cfg_json['eurostreaming']
 
+def autoget_eurostreaming_site():
+	site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.link').text).group(1)
+	return site if search('http',site) else 'https://{}'.format(site)
+
 def check_site(url):
 	try:
 		if not search(r'eurostreaming',url): print('Site [{}] is NOT from EuroStreaming, please check it.'.format(url)); return False
@@ -68,10 +72,10 @@ def cmd_config(*args):
 	print('Successful! New configuration saved correctly.')
 
 def cmd_reset(*args):
-	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// Eurostreaming site (may change over time)\n\t"eurostreaming": "https://eurostreaming.life",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t"series": [\n\t]\n}')
+	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// manul Eurostreaming site(may change over time, keep empty for auto retrieve)\n\t"eurostreaming": "",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t"series": [\n\t]\n}')
 
 def cmd_list(*args): 
-	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,url,lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
+	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,os.path.join(EUROSTREAMING,url),lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
 	print(series_list) if series_list else print('No series found!\nRun -aa (or --add-auto)')
 
 def cmd_log(*args):
@@ -121,6 +125,8 @@ def cmd_add_man(*args,name=None,url=None,add_mode='man'):
 	if not url: url = add_http(input('EuroStreaming url: '))
 	while not check_site(url):
 		url = add_http(input('EuroStreaming url: '))
+	original_url = url
+	url = search(r'(?:.+\/)(.+)(?:\/?)',url).group(1)
 	if url.lower() in [site.lower() for _,site,_,_ in SERIES]: print('WARNING: Site already exists.')
 	if add_mode == 'man': print()
 	lang = ''
@@ -136,7 +142,7 @@ def cmd_add_man(*args,name=None,url=None,add_mode='man'):
 			if search(r'\"]$',line): print(sub('\"]','\"],',line),end='')
 			else: print(sub(r'^[\t]*\]',new_serie+'\n\t]',line),end='')
 	if add_mode != 'scan':
-		print('\nSuccessful! {} [{}] [{},{}] added correctly.'.format(name,url,lang,mode))
+		print('\nSuccessful! {} [{}] [{},{}] added correctly.'.format(name,original_url,lang,mode))
 	else: print(); return name,url,lang,mode
 
 def cmd_remove(*args):
@@ -158,6 +164,7 @@ def cmd_link(*args):
 	if not args[0]: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
 	try:
 		name,url,sub,_ = SERIES[int(args[0][0])-1]
+		url = os.path.join(EUROSTREAMING,url)
 		sub = sub == 'ENG'
 		lk = LinkFinder(url,sub)
 		(season,episode),links = lk.get_direct_links()
@@ -171,6 +178,7 @@ def cmd_redown(*args):
 	if not args[0]: print('USAGE: -re (or --redownload) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
 	try:
 		name,url,sub,mode = SERIES[int(args[0][0])-1]
+		url = os.path.join(EUROSTREAMING,url)
 		sub = sub == 'ENG'
 		sf = ScanFolder(SERIES_PATH)
 		sf.scan_serie(name,mode)
@@ -241,6 +249,10 @@ if __name__ == '__main__':
 		except json.decoder.JSONDecodeError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
 		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
 
+		# check site
+		if not EUROSTREAMING: EUROSTREAMING = autoget_eurostreaming_site()
+		if not EUROSTREAMING: print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes or insert manually.'); exit() 
+
 		# set tmp and log files
 		TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
 		if not os.path.exists(TMP_PATH): os.mkdir(TMP_PATH)
@@ -263,17 +275,21 @@ if __name__ == '__main__':
 			# check folders
 			if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('WARNING: Series folder not found!\nConfigure your folder path with --config'); exit()
 			if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
-			if not all([check_site(site) for _,site,_,_ in SERIES]): exit()
+			if not all([check_site(os.path.join(EUROSTREAMING,site)) for _,site,_,_ in SERIES]): exit()
 			
+			print('## {} ##'.format(EUROSTREAMING))
+
 			# grab info from the series folder
 			sf = ScanFolder(SERIES_PATH)
 
 			# run the script for every series
 			for name,link,language,mode in SERIES:
 
+				# adjust settings
 				print('Searching new episodes for {} [{}]'.format(name,language))
 				mode = mode if mode in ['NEW','FULL'] else 'NEW'
 				language = language.lower() == 'ENG'.lower()
+				link = os.path.join(EUROSTREAMING,link)
 
 				# scan the folder
 				sf.scan_serie(name,mode)
