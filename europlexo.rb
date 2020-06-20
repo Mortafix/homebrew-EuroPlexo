@@ -4,9 +4,9 @@ class Europlexo < Formula
 
   desc "A command line script for downloading tv series"
   homepage "https://github.com/Mortafix/homebrew-EuroPlexo"
-  url "https://github.com/Mortafix/homebrew-EuroPlexo/archive/v1.1.0.tar.gz"
-  sha256 "95213273dc65ed90bb7804ca126c359b58a67c9e48080d59f688c3051d31b6a0"
-  version "1.1.0"
+  url "https://github.com/Mortafix/homebrew-EuroPlexo/archive/v1.1.1.tar.gz"
+  sha256 "32fddcfd932cb7f1f673748ebd8b876e009b6c960ba9d6753ea84ceef9e66c63"
+  version "1.1.1"
 
   depends_on "youtube-dl"
 
