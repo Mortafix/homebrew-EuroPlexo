@@ -11,11 +11,11 @@ class LinkFinder:
 		self._url = url
 		self._sub = sub
 		self._soup = bs(requests.get(url).text, 'html.parser')
-		self.info = {n:len([e for e in str(div).split('<br/>') if search(r'[0-9]{1,2}×(?!00)[0-9]{1,2}',e)]) for n,div in self._get_seasons_html_div().items()}
+		self.info = {n:[int(x.group(1)) for x in [search(r'(?:[0-9]{1,2}×)(?!00)([0-9]{1,2})',e) for e in str(div).split('<br/>')] if x] for n,div in self._get_seasons_html_div().items()}
 	
 	def __str__(self):
 		'''Pretty printing'''
-		info_str = '\n'.join(['Stagione {}: {} episodi(o).'.format(s,e) for s,e in self.info.items()])
+		info_str = '\n'.join(['Stagione {}: {}.'.format(s,e) for s,e in self.info.items()])
 		lang_str = 'ENG (SUB ITA)' if self._sub else 'ITA'
 		return 'Link: {}\nLanguage: {}\n-- Info --\n{}'.format(self._url,lang_str,info_str)
 
@@ -26,7 +26,7 @@ class LinkFinder:
 
 	def _is_episode_out(self,season,episode):
 		'''Check if an episode is out'''
-		return season <= max(self.info) and episode <= self.info[season] 
+		return season <= max(self.info) and episode in self.info[season] 
 
 	def _get_real_season_number(self,div):
 		'''Get the real season number (possible seasons missing)'''
@@ -38,7 +38,8 @@ class LinkFinder:
 
 	def _get_crypted_links(self,season=None,episode=None):
 		'''Get html crypted links for an episode, if not specified get last'''
-		if not season and not episode: season,episode = list(self.info.items())[-1]
+		if not season: season = max(self.info)
+		if not episode: episode = self.info[max(self.info)][-1]
 		try: div = [d for d in str(self._get_seasons_html_div()[season]).split('<br/>') if search(r'[0-9]{1,2}×0?'+str(episode),d)][-1]
 		except IndexError: div = '' 
 		return season,episode,findall(r'(?:<a href=\")([^\s]+)(?:\".+?>)([a-zA-Z0-9]+)',div)
