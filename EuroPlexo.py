@@ -81,7 +81,7 @@ def cmd_list(*args):
 def cmd_log(*args):
 	script_path = os.path.join(SCRIPT_DIR,'script.log')
 	if not os.path.exists(script_path): open(script_path, 'a').close()
-	print(open(script_path).read())
+	print(open(script_path).read()[:-1])
 
 def cmd_auto_scan(*args):
 	already_config = [name for name,_,_,_ in SERIES]
