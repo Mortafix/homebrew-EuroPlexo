@@ -34,7 +34,7 @@ class ScanFolder():
 	def episode_missing(self,serie_site_info):
 		'''Get missing episodes base on mode and already downloaded'''
 		try:
-			eps = [(se,ep) for se in serie_site_info.keys() for ep in range(1,serie_site_info[se]+1) if se not in self.folder_info or (se in self.folder_info and ep not in self.folder_info[se])]
+			eps = [(se,ep) for se in serie_site_info.keys() for ep in serie_site_info[se] if se not in self.folder_info or (se in self.folder_info and ep not in self.folder_info[se])]
 			if self.mode == 'NEW': eps = [(se,ep) for se,ep in eps if not self.folder_info or se > max(self.folder_info) or (se == max(self.folder_info) and (not self.folder_info[se] or ep > max(self.folder_info[se])))]
 			return eps
 		except AttributeError: raise AttributeError('You need to run scan_serie() first.')
