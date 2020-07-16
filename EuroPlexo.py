@@ -31,8 +31,10 @@ def read_config(cfg_path):
 	return cfg_json['series_folder'],cfg_json['series'],cfg_json['log'],cfg_json['eurostreaming']
 
 def autoget_eurostreaming_site():
-	site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.link').text).group(1)
-	return site if search('http',site) else 'https://{}'.format(site)
+	try:
+		site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.link').text).group(1)
+		return site if search('http',site) else 'https://{}'.format(site)
+	except ConnectionError: return 'https://eurostreaming.life'
 
 def check_site(url):
 	try:
