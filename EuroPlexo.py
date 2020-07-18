@@ -59,7 +59,16 @@ def update_log(logline):
 
 def send_telegram_log(logline):
 	datetime = get_current_datetime().split()
-	msg = '{} *{}*\n{} *{}*\n_{}_'.format(em('date'),datetime[0],em('clock5'),datetime[1],logline)
+	info = search(r'(?:episode of |found for )(.+)\s\[(\d\d?×\d\d?)\]\s(?:\((.+)\))?',logline)
+	serie = info.group(1)
+	episode = info.group(2)
+	size = '{} {}'.format(em('bulb'),info.group(3)) if info.group(3) else None
+	size = sub('->',em('arrow_forward'),size) if size else ''
+	size = sub(r'([\d\.]+)',r'*\1*',size)
+	if not size: what = '{0} No link found {0}'.format(em('no_entry'))
+	elif search(r'B\s',size): what = '{0} Redownloaded episode {0}'.format(em('eight_pointed_black_star'))
+	else: what = '{0} Downloaded episode {0}'.format(em('white_check_mark'))
+	msg = '{4}\n\n{0} {1}\n{2} {3}\n\n{5} *{6}*\n{7} Episode *{8}*\n{9}'.format(em('date'),datetime[0],em('clock5'),datetime[1],what,em('clapper'),serie.upper(),em('cyclone'),episode,size)
 	params = {"chat_id":TELEGRAM_ID,"text":msg,"parse_mode": "Markdown"}
 	requests.get("https://api.telegram.org/bot{}/sendMessage".format(BOT_TOKEN),params=params)
 
