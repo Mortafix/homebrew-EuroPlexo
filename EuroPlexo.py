@@ -11,6 +11,7 @@ import requests
 from requests.exceptions import ConnectionError, InvalidURL
 import sys
 import fileinput
+from emoji import emojize
 
 from ScanFolder import ScanFolder
 from LinkFinder import LinkFinder
@@ -28,13 +29,16 @@ def get_current_datetime():
 def read_config(cfg_path):
 	with open(os.path.join(cfg_path,'config.json'), 'r') as cfg:
 		cfg_json = json.loads(''.join([l for l in [sub('\t|\n','',l) for l in cfg.readlines()] if l and l[0] != '/']))
-	return cfg_json['series_folder'],cfg_json['series'],cfg_json['log'],cfg_json['eurostreaming']
+	return cfg_json['series_folder'],cfg_json['series'],cfg_json['log'],cfg_json['eurostreaming'],cfg_json['telegram_bot_token'],cfg_json['telegram_chat_id']
 
 def autoget_eurostreaming_site():
 	try:
-		site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.link').text).group(1)
+		site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.top').text).group(1)
 		return site if search('http',site) else 'https://{}'.format(site)
-	except ConnectionError: return 'https://eurostreaming.life'
+	except ConnectionError: return 'https://eurostreaming.cloud'
+
+def em(emoji_string):
+	return emojize(':'+emoji_string+':',use_aliases=True)
 
 def check_site(url):
 	try:
@@ -44,6 +48,7 @@ def check_site(url):
 	return True
 
 def update_log(logline):
+	if BOT_TOKEN: send_telegram_log(logline)
 	n = 0
 	for line in fileinput.input(os.path.join(SCRIPT_DIR,'script.log'), inplace = 1):
 		match = search(r'(?:\[[0-9\.\s\:]+\]\s'+escape(logline)+r')(?:\s\{([0-9]+)(?:\}))?',line)
@@ -51,6 +56,12 @@ def update_log(logline):
 		else: print(line,end='')
 	last_line = '[{}] {} {{{}}}\n'.format(get_current_datetime(),logline,n+1) if n > 0 else '[{}] {}\n'.format(get_current_datetime(),logline)
 	with open(os.path.join(SCRIPT_DIR,'script.log'),'a') as f: f.write(last_line)
+
+def send_telegram_log(logline):
+	datetime = get_current_datetime().split()
+	msg = '{} *{}*\n{} *{}*\n_{}_'.format(em('date'),datetime[0],em('clock5'),datetime[1],logline)
+	params = {"chat_id":TELEGRAM_ID,"text":msg,"parse_mode": "Markdown"}
+	requests.get("https://api.telegram.org/bot{}/sendMessage".format(BOT_TOKEN),params=params)
 
 def add_http(url):
 	return "http://"+url if not match(r'http',url) else url
@@ -84,6 +95,9 @@ def cmd_log(*args):
 	script_path = os.path.join(SCRIPT_DIR,'script.log')
 	if not os.path.exists(script_path): open(script_path, 'a').close()
 	print(open(script_path).read()[:-1])
+
+def cmd_test_telegram(*args):
+	send_telegram_log('Test message from Europlexo')
 
 def cmd_auto_scan(*args):
 	already_config = [name for name,_,_,_ in SERIES]
@@ -201,19 +215,20 @@ def cmd_redown_all(*args):
 	if not SERIES: cmd_list(); return 0
 	for i in range(1,len(SERIES)+1): cmd_redown([i])
 
-def cmd_help(*args): print(	'--{0:<11}-{0[0]:<5}run configuration\n\n'
-						'--{2:<11}-{2[0]:<5}add new tv serie [scan folder and add with automatic search]\n'
-						'--{3:<11}-{7:<5}add new tv serie [automatic search]\n'
-						'--{4:<11}-{8:<5}add new tv serie [manual]\n'
-						'--{1:<11}-{1[0]:<5}series list\n'
-						'--{5:<11}-{5[0]:<5}remove tv serie\n\n'
-						'--{13:<11}-{14:<5}get links last episode for a serie\n'
-						'--{15:<11}-{16:<5}redownload last episode for a serie (if higher quality)\n'
-						'--{17:<11}-{18:<5}redownload last episode for all series (if higher quality)\n\n'
-						'--{9:<11}-{10:<5}reset a corrupted or missing config file\n'
-						'--{11:<11}-{12:<5}show log file\n'
-						'--{6:<11}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra'))
+def cmd_help(*args): print(	'--{0:<16}-{0[0]:<5}run configuration\n\n'
+						'--{2:<16}-{2[0]:<5}add new tv serie [scan folder and add with automatic search]\n'
+						'--{3:<16}-{7:<5}add new tv serie [automatic search]\n'
+						'--{4:<16}-{8:<5}add new tv serie [manual]\n'
+						'--{1:<16}-{1[0]:<5}series list\n'
+						'--{5:<16}-{5[0]:<5}remove tv serie\n\n'
+						'--{13:<16}-{14:<5}get links last episode for a serie\n'
+						'--{15:<16}-{16:<5}redownload last episode for a serie (if higher quality)\n'
+						'--{17:<16}-{18:<5}redownload last episode for all series (if higher quality)\n\n'
+						'--{9:<16}-{10:<5}reset a corrupted or missing config file\n'
+						'--{11:<16}-{12:<5}show log file\n'
+						'--{19:<16}-{19[0]:<5}test Telegram log message\n'
+						'--{6:<16}-{6[0]:<5}show this message'
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra','test-telegram'))
 
 # DOWNLOADING FUNCTION ----------------------------------
 
@@ -246,10 +261,10 @@ if __name__ == '__main__':
 			
 		# grab info from config
 		SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-		try: SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR)
+		try: SERIES_PATH,SERIES,LOG,EUROSTREAMING,BOT_TOKEN,TELEGRAM_ID = read_config(SCRIPT_DIR)
 		except KeyError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
 		except json.decoder.JSONDecodeError: print('ERROR: config file corrupted, please check your file or run --reset'); exit()
-		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING = read_config(SCRIPT_DIR); cmd_config(); exit()
+		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING,BOT_TOKEN,TELEGRAM_ID = read_config(SCRIPT_DIR); cmd_config(); exit()
 
 		# check site
 		if not EUROSTREAMING: EUROSTREAMING = autoget_eurostreaming_site()
@@ -265,8 +280,8 @@ if __name__ == '__main__':
 		READ_ERROR_LOG = lambda : open(error_log_path).read()
 
 		# commands
-		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all}
-		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all}
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all,'t':cmd_test_telegram}
 		try:
 			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]](sys.argv[2:])
 			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]](sys.argv[2:])
