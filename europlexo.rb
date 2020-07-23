@@ -27,6 +27,11 @@ class Europlexo < Formula
     sha256 "73cc4d115b96f79c7d77c1c7f7a0a8d4c57860d1041df407dd1aae7f07a77fd7"
   end
 
+  resource "emoji" do
+    url "https://files.pythonhosted.org/packages/40/8d/521be7f0091fe0f2ae690cc044faf43e3445e0ff33c574eae752dd7e39fa/emoji-0.5.4.tar.gz"
+    sha256 "60652d3a2dcee5b8af8acb097c31776fb6d808027aeb7221830f72cdafefc174"
+  end
+
   resource "soupsieve" do
     url "https://files.pythonhosted.org/packages/3e/db/5ba900920642414333bdc3cb397075381d63eafc7e75c2373bbc560a9fa1/soupsieve-2.0.1.tar.gz"
     sha256 "a59dc181727e95d25f781f0eb4fd1825ff45590ec8ff49eadfd7f1a537cc0232"
