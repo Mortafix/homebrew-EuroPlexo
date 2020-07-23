@@ -35,7 +35,12 @@ def autoget_eurostreaming_site():
 	try:
 		site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.top').text).group(1)
 		return site if search('http',site) else 'https://{}'.format(site)
-	except ConnectionError: return 'https://eurostreaming.cloud'
+	except (ConnectionError, AttributeError): 
+		try:
+			man_connection = 'https://eurostreaming.cloud'
+			requests.get(man_connection)
+			return man_connection
+		except ConnectionError: return None
 
 def em(emoji_string):
 	return emojize(':'+emoji_string+':',use_aliases=True)
@@ -278,7 +283,7 @@ if __name__ == '__main__':
 
 		# check site
 		if not EUROSTREAMING: EUROSTREAMING = autoget_eurostreaming_site()
-		if not EUROSTREAMING: print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes or insert manually.'); exit() 
+		if not EUROSTREAMING: print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes.'); exit() 
 
 		# set tmp and log files
 		TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
