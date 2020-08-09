@@ -1,5 +1,5 @@
 {
-	// manul Eurostreaming site(may change over time, keep empty for auto retrieve)
+	// manual Eurostreaming site (may change over time, anyway it will try to auto retrieve first)
 	"eurostreaming": "",
 
 	// folder where you have (or want) the series
@@ -17,8 +17,9 @@
 	// LINK: EuroStreming episodes link
 	// LANGUAGE: ITA or ENG (it'll be SUB ITA)
 	// MODE:
-	//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder
+	//  1. FULL: download all the episodes (available on EuroStreaming) missing in the folder
 	//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]
+	//  3. LAST: download all the episodes (available on EuroStreaming) of the last season
 	"series": [
 	],
 

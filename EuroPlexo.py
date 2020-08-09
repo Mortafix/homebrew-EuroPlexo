@@ -81,7 +81,7 @@ def add_http(url):
 	return "http://"+url if not match(r'http',url) else url
 
 def get_size_last_file(series_folder_path,serie_name,season,episode):
-	path = os.path.join(series_folder_path,serie_name,'Stagione {}'.format(season))
+	path = os.path.join(series_folder_path,serie_name,'Season {}'.format(season))
 	last_file = [file for file in list(os.walk(path))[0][2] if match(r'0?'+str(episode),file)][0]
 	try: return last_file,os.path.getsize(os.path.join(path,last_file)) / 1000**2
 	except IndexError: return '',0
@@ -99,7 +99,7 @@ def cmd_config(*args):
 	print('Successful! New configuration saved correctly.')
 
 def cmd_reset(*args):
-	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// manul Eurostreaming site(may change over time, keep empty for auto retrieve)\n\t"eurostreaming": "",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episode (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t"series": [\n\t],\n\n\t// Telegram bot token and your Telegram chat ID to receive log messages\n\t"telegram_bot_token": "",\n\t"telegram_chat_id": ""\n}')
+	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// manual Eurostreaming site (may change over time, anyway it will try to auto retrieve first)\n\t"eurostreaming": "",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episodes (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t//  3. LAST: download all the episodes (available on EuroStreaming) of the last season\n\t"series": [\n\t],\n\n\t// Telegram bot token and your Telegram chat ID to receive log messages\n\t"telegram_bot_token": "",\n\t"telegram_chat_id": ""\n}')
 	print('Config file resetted.')
 
 def cmd_list(*args): 
@@ -163,10 +163,10 @@ def cmd_add_man(*args,name=None,url=None,add_mode='man'):
 	lang = ''
 	while lang.lower() not in ['eng','ita']:
 		lang = input('Language [eng|ita]: ')
-	print('\n- FULL: download all the episode missing in the folder\n- NEW:  download only the episodes after the newest in the folder')
+	print('\n- FULL: download all the episodes missing in the folder\n- NEW:  download only the episodes after the newest in the folder\n- LAST: download all the episodes of the last season')
 	mode = ''
-	while mode.lower() not in ['full','new']:
-		mode = input('Mode [full|new]: ')
+	while mode.lower() not in ['full','new','last']:
+		mode = input('Mode [full|new|last]: ')
 	# adding in config file
 	new_serie = '\t\t'+str([name,url,lang.upper(),mode.upper()]).replace('\'','\"')
 	for line in fileinput.input(os.path.join(SCRIPT_DIR,'config.json'), inplace = 1): 
@@ -319,7 +319,7 @@ if __name__ == '__main__':
 
 				# adjust settings
 				print('Searching new episodes for {} [{}]'.format(name,language))
-				mode = mode if mode in ['NEW','FULL'] else 'NEW'
+				mode = mode if mode in ['NEW','FULL','LAST'] else 'NEW'
 				language = language.lower() == 'ENG'.lower()
 				link = os.path.join(EUROSTREAMING,link)
 

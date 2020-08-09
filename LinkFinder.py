@@ -15,7 +15,7 @@ class LinkFinder:
 	
 	def __str__(self):
 		'''Pretty printing'''
-		info_str = '\n'.join(['Stagione {}: {}.'.format(s,e) for s,e in self.info.items()])
+		info_str = '\n'.join(['Season {}: {}.'.format(s,e) for s,e in self.info.items()])
 		lang_str = 'ENG (SUB ITA)' if self._sub else 'ITA'
 		return 'Link: {}\nLanguage: {}\n-- Info --\n{}'.format(self._url,lang_str,info_str)
 

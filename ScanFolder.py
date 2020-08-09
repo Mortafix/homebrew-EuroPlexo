@@ -13,7 +13,8 @@ class ScanFolder():
 
 	def _get_season_folder_name(self):
 		'''Template for season folder name'''
-		return sub('[0-9]{1,2}','##',next(os.walk('/'.join([self.path,self.serie_folder_name])))[1][0])
+		try: return sub('[0-9]{1,2}','##',next(os.walk('/'.join([self.path,self.serie_folder_name])))[1][0])
+		except IndexError: return 'Season ##'
 
 	def scan_serie(self,serie_folder_name,mode):
 		'''Scan a specific serie | get all episodes'''
@@ -27,8 +28,7 @@ class ScanFolder():
 				elif seasons[i-1] != 0: info[seasons[i-1]] = sorted(set([int(m.group(1)) for m in [search(r'([0-9]{1,3})(?:\.)',f) for f in files] if m]))
 		else:
 			os.mkdir('/'.join([self.path,serie_folder_name]))
-			self.season_folder_name = 'Stagione ##'
-			os.mkdir(self.get_abspath_season(1))
+			self.season_folder_name = self._get_season_folder_name()
 		self.folder_info = {k: v for k, v in sorted(info.items())} if info else info
 
 	def episode_missing(self,serie_site_info):
@@ -36,6 +36,7 @@ class ScanFolder():
 		try:
 			eps = [(se,ep) for se in serie_site_info.keys() for ep in serie_site_info[se] if se not in self.folder_info or (se in self.folder_info and ep not in self.folder_info[se])]
 			if self.mode == 'NEW': eps = [(se,ep) for se,ep in eps if not self.folder_info or se > max(self.folder_info) or (se == max(self.folder_info) and (not self.folder_info[se] or ep > max(self.folder_info[se])))]
+			if self.mode == 'LAST': eps = [(se,ep) for se,ep in eps if se == max([se for se,ep in eps])]
 			return eps
 		except AttributeError: raise AttributeError('You need to run scan_serie() first.')
 
