@@ -30,7 +30,7 @@ class LinkFinder:
 
 	def _get_real_season_number(self,div):
 		'''Get the real season number (possible seasons missing)'''
-		return int(findall(r'(?:[A-Z]+\sSTAGIONE\s)([0-9]{1,2})(?:\s(?:\(SUB\s)?ITA\)?)',str(div))[0])
+		return int(search(r'(?:STAGIONE\s+)(\d{1,2})(?:.+)',str(div)).group(1))
 
 	def _get_seasons_html_div(self):
 		'''Get all seasons in html div'''

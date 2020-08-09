@@ -90,7 +90,7 @@ def get_size_last_file(series_folder_path,serie_name,season,episode):
 
 def cmd_config(*args):
 	folder = SERIES_PATH if SERIES_PATH != 'put here yuor series folder path' else ''
-	path = input('Series folder [{}]: '.format(folder))
+	path = input('Series folder [{}]: '.format(folder)).strip()
 	while not os.path.exists(path):
 		path = input('Folder not exists. Retry: ')
 	if path:
