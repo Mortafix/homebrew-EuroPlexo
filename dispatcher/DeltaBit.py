@@ -13,14 +13,11 @@ def deltabit2deltabitGen(deltabit_url):
 
 def deltabitGen2deltabitCloud(deltabit_gen_url):
 	urls = list()
-	while len(urls) == 0:
+	tries,max_tries = 0,10
+	while len(urls) == 0 and tries < max_tries:
+		tries += 1
 		urls = findall(r'(?:onclick=\"window.open\(\')([^\s]+)(?:\')',requests.get(deltabit_gen_url).text)
 		sleep(1)
-	return urls[0]
+	return urls[0] if urls else None
 
 def get_DeltaBit_download_link(url): return deltabitGen2deltabitCloud(deltabit2deltabitGen(encrypt2deltabit(url)))
-
-if __name__ == '__main__':
-	url = "https://linkup.pro/delta/erf3921nri5r"
-	down_url = get_DeltaBit_download_link(url) 
-	print(down_url)

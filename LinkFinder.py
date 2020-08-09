@@ -40,7 +40,7 @@ class LinkFinder:
 		'''Get html crypted links for an episode, if not specified get last'''
 		if not season: season = max(self.info)
 		if not episode: episode = self.info[max(self.info)][-1]
-		try: div = [d for d in str(self._get_seasons_html_div()[season]).split('<br/>') if search(r'[0-9]{1,2}×0?'+str(episode),d)][-1]
+		try: div = [d for d in str(self._get_seasons_html_div()[season]).split('<br/>') if search(r'\d{1,2}×0?'+str(episode)+r'(?!\d)',d)][-1]
 		except IndexError: div = '' 
 		return season,episode,findall(r'(?:<a href=\")([^\s]+)(?:\".+?>)([a-zA-Z0-9]+)',div)
 
