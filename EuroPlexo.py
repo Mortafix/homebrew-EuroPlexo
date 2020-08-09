@@ -8,7 +8,7 @@ import shutil
 from re import sub,search,escape,match
 from datetime import datetime
 import requests
-from requests.exceptions import ConnectionError, InvalidURL
+from requests.exceptions import ConnectionError, InvalidURL, MissingSchema
 import sys
 import fileinput
 from emoji import emojize
@@ -31,16 +31,15 @@ def read_config(cfg_path):
 		cfg_json = json.loads(''.join([l for l in [sub('\t|\n','',l) for l in cfg.readlines()] if l and l[0] != '/']))
 	return cfg_json['series_folder'],cfg_json['series'],cfg_json['log'],cfg_json['eurostreaming'],cfg_json['telegram_bot_token'],cfg_json['telegram_chat_id']
 
-def autoget_eurostreaming_site():
+def autoget_eurostreaming_site(manual_site):
 	try:
 		site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.top').text).group(1)
 		return site if search('http',site) else 'https://{}'.format(site)
 	except (ConnectionError, AttributeError): 
 		try:
-			man_connection = 'https://eurostreaming.cloud'
-			requests.get(man_connection)
-			return man_connection
-		except ConnectionError: return None
+			requests.get(manual_site)
+			return manual_site
+		except (ConnectionError, MissingSchema): return None
 
 def em(emoji_string):
 	return emojize(':'+emoji_string+':',use_aliases=True)
@@ -282,8 +281,8 @@ if __name__ == '__main__':
 		except FileNotFoundError: print('WARNING: config file not found, recreating and running the --config.'); cmd_reset(); SERIES_PATH,SERIES,LOG,EUROSTREAMING,BOT_TOKEN,TELEGRAM_ID = read_config(SCRIPT_DIR); cmd_config(); exit()
 
 		# check site
-		if not EUROSTREAMING: EUROSTREAMING = autoget_eurostreaming_site()
-		if not EUROSTREAMING: print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes.'); exit() 
+		EUROSTREAMING = autoget_eurostreaming_site(EUROSTREAMING)
+		if not EUROSTREAMING and len(sys.argv) > 1 and sys.argv[1] not in ['--reset','-rs','--help','h']: print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes.'); exit() 
 
 		# set tmp and log files
 		TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
