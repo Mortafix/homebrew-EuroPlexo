@@ -9,6 +9,7 @@ class Europlexo < Formula
   version "1.2.1"
 
   depends_on "youtube-dl"
+  depends_on "python3"
 
   bottle :unneeded
 
