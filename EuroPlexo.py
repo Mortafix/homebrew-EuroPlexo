@@ -69,7 +69,8 @@ def send_telegram_log(logline):
 	size = '{} {}'.format(em('bulb'),info.group(3)) if info.group(3) else None
 	size = sub('->',em('arrow_forward'),size) if size else ''
 	size = sub(r'([\d\.]+)',r'*\1*',size)
-	if not size: what = '{0} No link found {0}'.format(em('no_entry'))
+	if search('test',logline): what = '{0} Test message {0}'.format(em('heart_decoration'))
+	elif not size: what = '{0} No link found {0}'.format(em('no_entry'))
 	elif search(r'B\s',size): what = '{0} Redownloaded episode {0}'.format(em('eight_pointed_black_star'))
 	else: what = '{0} Downloaded episode {0}'.format(em('white_check_mark'))
 	msg = '{4}\n\n{0} {1}\n{2} {3}\n\n{5} *{6}*\n{7} Episode *{8}*\n{9}'.format(em('date'),datetime[0],em('clock5'),datetime[1],what,em('clapper'),serie.upper(),em('cyclone'),episode,size)
@@ -103,7 +104,8 @@ def cmd_reset(*args):
 
 def cmd_list(*args): 
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,os.path.join(EUROSTREAMING,url),lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
-	print(series_list) if series_list else print('No series found!\nRun -aa (or --add-auto)')
+	if series_list: print(series_list)
+	else: print('WARNING: No series found!\nConfigure series with one of the add commands.\nFind out more with --help'); exit()
 
 def cmd_log(*args):
 	script_path = os.path.join(SCRIPT_DIR,'script.log')
@@ -111,15 +113,18 @@ def cmd_log(*args):
 	print(open(script_path).read()[:-1])
 
 def cmd_test_telegram(*args):
-	send_telegram_log('Test message from Europlexo')
+	if TELEGRAM_ID and BOT_TOKEN: send_telegram_log('[09.08.2020 12:03] test episode of Test [6×9] (420 MB)'); print(f'Message sent to Telegram ID {TELEGRAM_ID} with Telegram bot {BOT_TOKEN}.\n')
+	else: print('Telegram ID and/or bot token missing.\n')
 
 def cmd_auto_scan(*args):
-	already_config = [name for name,_,_,_ in SERIES]
-	sugg_series =[cmd_add_auto(name=k,series=v,add_mode='scan') if v else (k,None) for k,v in {s:get_suggestion_list(EUROSTREAMING,s) for s in [se for se in [d for _,d,_ in os.walk(SERIES_PATH) if d][0] if se not in already_config]}.items()]
-	print('\n## AUTOSCAN COMPLETE ##')
-	series_toprint = ['{}. {} [{}] [{},{}]'.format(i+1,serie,site,lang,mode) if site else 'No series found for \'{}\'! Try with --add-auto.'.format(serie) for i,(serie,site,lang,mode) in enumerate(sorted(sugg_series,key=lambda x:(x[1] is None,x[1]))) if serie]
-	if series_toprint: print('\n'.join(series_toprint))
-	print('\n{} serie(s) added to download.'.format(len(series_toprint)))
+	try:
+		already_config = [name for name,_,_,_ in SERIES]
+		sugg_series =[cmd_add_auto(name=k,series=v,add_mode='scan') if v else (k,None) for k,v in {s:get_suggestion_list(EUROSTREAMING,s) for s in [se for se in [d for _,d,_ in os.walk(SERIES_PATH) if d][0] if se not in already_config]}.items()]
+		print('\n## AUTOSCAN COMPLETE ##')
+		series_toprint = ['{}. {} [{}] [{},{}]'.format(i+1,serie,site,lang,mode) if site else 'No series found for \'{}\'! Try with --add-auto.'.format(serie) for i,(serie,site,lang,mode) in enumerate(sorted(sugg_series,key=lambda x:(x[1] is None,x[1]))) if serie]
+		if series_toprint: print('\n'.join(series_toprint))
+		print('\n{} serie(s) added to download.'.format(len(series_toprint)))
+	except ValueError: print('Folder structure not valid.')
 
 def cmd_add_auto(*args,name=None,series=None,add_mode='auto'):
 	if not series:
@@ -190,7 +195,7 @@ def cmd_remove(*args):
 	print('Successful! {} removed correctly.'.format(name))
 
 def cmd_link(*args):
-	if not SERIES: cmd_list(); return 0
+	if not SERIES: cmd_list()
 	if not args[0]: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
 	try:
 		name,url,sub,_ = SERIES[int(args[0][0])-1]
@@ -201,7 +206,7 @@ def cmd_link(*args):
 		print('Link(s) for {} [{}×{}]\n\n{}'.format(name,season,episode,'\n'.join(['({1}) {0}'.format(l,int_to_hr_size(s)) for l,s in links])))
 	except ValueError: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.')
 	except IndexError: print('Series number ({}) out of list!\nShould be between 1 and {}.'.format(int(args[0][0]),len(SERIES)))
-	finally: return 0
+	finally: exit()
 
 def cmd_redown(*args):
 	if not SERIES: cmd_list(); return 0
@@ -305,7 +310,7 @@ if __name__ == '__main__':
 
 			# check folders
 			if not SERIES_PATH or not os.path.exists(SERIES_PATH): print('WARNING: Series folder not found!\nConfigure your folder path with --config'); exit()
-			if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add command.\nFind out more with --help'); exit()
+			if not SERIES: print('WARNING: No series found!\nConfigure series with one of the add commands.\nFind out more with --help'); exit()
 			if not all([check_site(os.path.join(EUROSTREAMING,site)) for _,site,_,_ in SERIES]): exit()
 			
 			print('## {} ##'.format(EUROSTREAMING))
