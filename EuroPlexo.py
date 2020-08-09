@@ -102,6 +102,9 @@ def cmd_reset(*args):
 	with open(os.path.join(SCRIPT_DIR,'config.json'),'w+') as f: f.write('{\n\t// manual Eurostreaming site (may change over time, anyway it will try to auto retrieve first)\n\t"eurostreaming": "",\n\n\t// folder where you have (or want) the series\n\t"series_folder": "put here yuor series folder path",\n\n\t// log file and path\n\t// 1: YES, 0: NO\n\t"log": 1,\n\n\t// list of all the series you want to download\n\t// [NAME,LINK,LANGUAGE,MODE]\n\t// NAME: \n\t//  1. if you already have the folder: NAME should be the folder name\n\t//  2. if you don\'t have the folder yet: NAME will be the folder name\n\t// LINK: EuroStreming episodes link\n\t// LANGUAGE: ITA or ENG (it\'ll be SUB ITA)\n\t// MODE:\n\t//  1. FULL: download all the episodes (available on EuroStreaming) missing in the folder\n\t//  2. NEW:  download only the episodes (available on EuroStreaming) after the newest in the folder [default]\n\t//  3. LAST: download all the episodes (available on EuroStreaming) of the last season\n\t"series": [\n\t],\n\n\t// Telegram bot token and your Telegram chat ID to receive log messages\n\t"telegram_bot_token": "",\n\t"telegram_chat_id": ""\n}')
 	print('Config file resetted.')
 
+def cmd_version(*args):
+	print('Europlexo v1.2.2\n')
+
 def cmd_list(*args): 
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,os.path.join(EUROSTREAMING,url),lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
 	if series_list: print(series_list)
@@ -246,8 +249,9 @@ def cmd_help(*args): print(	'--{0:<16}-{0[0]:<5}run configuration\n\n'
 						'--{9:<16}-{10:<5}reset a corrupted or missing config file\n'
 						'--{11:<16}-{12:<5}show log file\n'
 						'--{19:<16}-{19[0]:<5}test Telegram log message\n'
+						'--{20:<16}-{20[0]:<5}show script version\n'
 						'--{6:<16}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra','test-telegram'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra','test-telegram','version'))
 
 # DOWNLOADING FUNCTION ----------------------------------
 
@@ -299,8 +303,8 @@ if __name__ == '__main__':
 		READ_ERROR_LOG = lambda : open(error_log_path).read()
 
 		# commands
-		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram}
-		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all,'t':cmd_test_telegram}
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram,'version':cmd_version}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all,'t':cmd_test_telegram,'v':cmd_version}
 		try:
 			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]](sys.argv[2:])
 			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]](sys.argv[2:])
