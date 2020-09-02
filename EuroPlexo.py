@@ -33,7 +33,7 @@ def read_config(cfg_path):
 
 def autoget_eurostreaming_site(manual_site):
 	try:
-		site = search(r'(?:<title>site:)(.+)(?:\s-\sCerca)',requests.get('https://eurostreaming.top').text).group(1)
+		site = search(r'(?:site:)([\w\.\/\:]+)(?:\W)',requests.get('https://eurostreaming.top').text).group(1)
 		return site if search('http',site) else 'https://{}'.format(site)
 	except (ConnectionError, AttributeError): 
 		try:
@@ -63,16 +63,16 @@ def update_log(logline):
 
 def send_telegram_log(logline):
 	datetime = get_current_datetime().split()
-	info = search(r'(?:episode of |found for )(.+)\s\[(\d\d?×\d\d?)\]\s(?:\((.+)\))?',logline)
+	info = search(r'(?:episode of |working for )(.+)\s\[(\d\d?×\d\d?)\](?:\s\((.+)\))?',logline)
 	serie = info.group(1)
 	episode = info.group(2)
 	size = '{} {}'.format(em('bulb'),info.group(3)) if info.group(3) else None
 	size = sub('->',em('arrow_forward'),size) if size else ''
 	size = sub(r'([\d\.]+)',r'*\1*',size)
 	if search('test',logline): what = '{0} Test message {0}'.format(em('heart_decoration'))
-	elif not size: what = '{0} No link found {0}'.format(em('no_entry'))
-	elif search(r'B\s',size): what = '{0} Redownloaded episode {0}'.format(em('eight_pointed_black_star'))
-	else: what = '{0} Downloaded episode {0}'.format(em('white_check_mark'))
+	elif not size: what = '{0} *No link working* {0}'.format(em('no_entry'))
+	elif search(r'B\s',size): what = '{0} *Redownloaded episode* {0}'.format(em('eight_pointed_black_star'))
+	else: what = '{0} *Downloaded episode* {0}'.format(em('white_check_mark'))
 	msg = '{4}\n\n{0} {1}\n{2} {3}\n\n{5} *{6}*\n{7} Episode *{8}*\n{9}'.format(em('date'),datetime[0],em('clock5'),datetime[1],what,em('clapper'),serie.upper(),em('cyclone'),episode,size)
 	params = {"chat_id":TELEGRAM_ID,"text":msg,"parse_mode": "Markdown"}
 	requests.get("https://api.telegram.org/bot{}/sendMessage".format(BOT_TOKEN),params=params)
@@ -103,7 +103,7 @@ def cmd_reset(*args):
 	print('Config file resetted.')
 
 def cmd_version(*args):
-	print('Europlexo v1.2.2\n')
+	print('Europlexo v1.2.3\n')
 
 def cmd_list(*args): 
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,os.path.join(EUROSTREAMING,url),lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
@@ -291,7 +291,7 @@ if __name__ == '__main__':
 
 		# check site
 		EUROSTREAMING = autoget_eurostreaming_site(EUROSTREAMING)
-		if not EUROSTREAMING and len(sys.argv) > 1 and sys.argv[1] not in ['--reset','-rs','--help','h']: print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes.'); exit() 
+		if not EUROSTREAMING or (not EUROSTREAMING and len(sys.argv) > 1 and sys.argv[1] not in ['--reset','-rs','--help','h']): print('I can\'t retrieve EuroStreaing site.\nPlease wait a few minutes.'); exit() 
 
 		# set tmp and log files
 		TMP_PATH = os.path.join(SCRIPT_DIR,'tmp')
@@ -347,7 +347,7 @@ if __name__ == '__main__':
 						print('\n'.join(['{0:>3}. ({2}) {1}\n'.format(i+1,l,int_to_hr_size(s)) for i,(l,s) in enumerate(direct_links)]))
 						download_episode(name,season,episode,direct_links) # downloading
 					except ValueError:
-						log_line = 'No link found for {} [{}×{}]'.format(name,season,episode)
+						log_line = 'No link working for {} [{}×{}]'.format(name,season,episode)
 						if LOG: update_log(log_line), print(log_line)
 					print()
 			
