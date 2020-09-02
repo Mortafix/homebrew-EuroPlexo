@@ -58,6 +58,10 @@ class Europlexo < Formula
     sha256 "3018294ebefce6572a474f0604c2021e33b3fd8006ecd11d62107a5d2a963527"
   end
 
+  resource "cloudscraper" do 
+    url "https://files.pythonhosted.org/packages/e3/67/12931f5b2128034461e8b6ebce38073d29017442ff9d0154f5c88f15e1ae/cloudscraper-1.2.46.tar.gz"
+    sha256 "793095bbc37aae84a5c38d9f66b56f3c83a00f0b1ff2d334f75a2b8f88b924af"
+
   require "fileutils"
 
   def install
