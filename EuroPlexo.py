@@ -16,6 +16,7 @@ from emoji import emojize
 from ScanFolder import ScanFolder
 from LinkFinder import LinkFinder
 from SeriesFinder import *
+from dispatcher import DeltaBit, TurboVid
 
 # RANDOM FUNCTIONS --------------------------------------
 
@@ -118,6 +119,14 @@ def cmd_log(*args):
 def cmd_test_telegram(*args):
 	if TELEGRAM_ID and BOT_TOKEN: send_telegram_log('[09.08.2020 12:03] test episode of Test [6×9] (420 MB)'); print(f'Message sent to Telegram ID {TELEGRAM_ID} with Telegram bot {BOT_TOKEN}.\n')
 	else: print('Telegram ID and/or bot token missing.\n')
+
+def cmd_test(*args):
+	print('# Testing host sites #')
+	if DeltaBit.get_DeltaBit_download_link('https://linkup.pro/delta/9o7hote8b2rd'): print('DeltaBit\tWORKING!')
+	else: print('DeltaBit\tNOT working.')
+	if TurboVid.get_TurboVid_download_link('http://linkup.pro/tv/ykl72kwh'): print('TurboVid\tWORKING!')
+	else: print('TurboVid\tNOT working.')
+	return 0
 
 def cmd_auto_scan(*args):
 	try:
@@ -248,10 +257,11 @@ def cmd_help(*args): print(	'--{0:<16}-{0[0]:<5}run configuration\n\n'
 						'--{17:<16}-{18:<5}redownload last episode for all series (if higher quality)\n\n'
 						'--{9:<16}-{10:<5}reset a corrupted or missing config file\n'
 						'--{11:<16}-{12:<5}show log file\n'
-						'--{19:<16}-{19[0]:<5}test Telegram log message\n'
+						'--{22:<16}-{22[0]:<5}test script\n'
+						'--{19:<16}-{21:<5}test Telegram log message\n'
 						'--{20:<16}-{20[0]:<5}show script version\n'
 						'--{6:<16}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra','test-telegram','version'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra','test-telegram','version','tt','test'))
 
 # DOWNLOADING FUNCTION ----------------------------------
 
@@ -303,8 +313,8 @@ if __name__ == '__main__':
 		READ_ERROR_LOG = lambda : open(error_log_path).read()
 
 		# commands
-		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram,'version':cmd_version}
-		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all,'t':cmd_test_telegram,'v':cmd_version}
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram,'version':cmd_version,'test':cmd_test}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all,'tt':cmd_test_telegram,'v':cmd_version,'t':cmd_test}
 		try:
 			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]](sys.argv[2:])
 			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]](sys.argv[2:])
