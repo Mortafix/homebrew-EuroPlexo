@@ -3,6 +3,8 @@ import requests
 from re import search
 from time import sleep
 
+class SiteError(Exception): pass
+
 def encrypt2turbovid(linkup_url):
 	return requests.get(linkup_url.replace("/tv/","/tva/"),allow_redirects=True).url
 
@@ -17,4 +19,6 @@ def turbovidPOST2turbovidCloud(turbovid_post_url):
 	except AttributeError: url = None
 	return url
 
-def get_TurboVid_download_link(url): return turbovidPOST2turbovidCloud(turbovid2turbovidPOST(encrypt2turbovid(url)))
+def get_TurboVid_download_link(url): 
+	try: return turbovidPOST2turbovidCloud(turbovid2turbovidPOST(encrypt2turbovid(url)))
+	except SiteError: return None

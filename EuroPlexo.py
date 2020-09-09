@@ -104,7 +104,7 @@ def cmd_reset(*args):
 	print('Config file resetted.')
 
 def cmd_version(*args):
-	print('Europlexo v1.2.3\n')
+	print('Europlexo v1.3.0\n')
 
 def cmd_list(*args): 
 	series_list = '\n'.join(['{}. {} [{}] [{},{}]'.format(i+1,name,os.path.join(EUROSTREAMING,url),lang,mode) for i,(name,url,lang,mode) in enumerate(SERIES)])
@@ -206,15 +206,30 @@ def cmd_remove(*args):
 		else: print(line,end='')
 	print('Successful! {} removed correctly.'.format(name))
 
-def cmd_link(*args):
+def cmd_last(*args):
 	if not SERIES: cmd_list()
-	if not args[0]: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
+	if not args[0]: print('USAGE: -gla (or --get-last) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.'); return 0
 	try:
 		name,url,sub,_ = SERIES[int(args[0][0])-1]
 		url = os.path.join(EUROSTREAMING,url)
 		sub = sub == 'ENG'
 		lk = LinkFinder(url,sub)
 		(season,episode),links = lk.get_direct_links()
+		print('Link(s) for {} [{}×{}]\n\n{}'.format(name,season,episode,'\n'.join(['({1}) {0}'.format(l,int_to_hr_size(s)) for l,s in links])))
+	except ValueError: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.')
+	except IndexError: print('Series number ({}) out of list!\nShould be between 1 and {}.'.format(int(args[0][0]),len(SERIES)))
+	finally: exit()
+
+def cmd_link(*args):
+	if not SERIES: cmd_list()
+	if not args[0] or len(args[0]) != 3: print('USAGE: -gli (or --get-link) [series-number-from-your-list] [season] [episode]\nRun -l (or --list) to see series numbers.'); return 0
+	try:
+		name,url,sub,_ = SERIES[int(args[0][0])-1]
+		season,episode = int(args[0][1]),int(args[0][2])
+		url = os.path.join(EUROSTREAMING,url)
+		sub = sub == 'ENG'
+		lk = LinkFinder(url,sub)
+		(season,episode),links = lk.get_direct_links(season,episode)
 		print('Link(s) for {} [{}×{}]\n\n{}'.format(name,season,episode,'\n'.join(['({1}) {0}'.format(l,int_to_hr_size(s)) for l,s in links])))
 	except ValueError: print('USAGE: -gl (or --get-link) [series-number-from-your-list]\nRun -l (or --list) to see series numbers.')
 	except IndexError: print('Series number ({}) out of list!\nShould be between 1 and {}.'.format(int(args[0][0]),len(SERIES)))
@@ -253,6 +268,7 @@ def cmd_help(*args): print(	'--{0:<16}-{0[0]:<5}run configuration\n\n'
 						'--{1:<16}-{1[0]:<5}series list\n'
 						'--{5:<16}-{5[0]:<5}remove tv serie\n\n'
 						'--{13:<16}-{14:<5}get links last episode for a serie\n'
+						'--{23:<16}-{24:<5}get links single episode for a serie\n'
 						'--{15:<16}-{16:<5}redownload last episode for a serie (if higher quality)\n'
 						'--{17:<16}-{18:<5}redownload last episode for all series (if higher quality)\n\n'
 						'--{9:<16}-{10:<5}reset a corrupted or missing config file\n'
@@ -261,7 +277,7 @@ def cmd_help(*args): print(	'--{0:<16}-{0[0]:<5}run configuration\n\n'
 						'--{19:<16}-{21:<5}test Telegram log message\n'
 						'--{20:<16}-{20[0]:<5}show script version\n'
 						'--{6:<16}-{6[0]:<5}show this message'
-						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gl','redl','re','redl-all','ra','test-telegram','version','tt','test'))
+						.format('config','list','scan','add-auto','add-man','remove','help','aa','am','reset','rs','log','lg','get-last','gla','redl','re','redl-all','ra','test-telegram','version','tt','test','get-link','gli'))
 
 # DOWNLOADING FUNCTION ----------------------------------
 
@@ -313,8 +329,8 @@ if __name__ == '__main__':
 		READ_ERROR_LOG = lambda : open(error_log_path).read()
 
 		# commands
-		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_link,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram,'version':cmd_version,'test':cmd_test}
-		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gl':cmd_link,'re':cmd_redown,'ra':cmd_redown_all,'tt':cmd_test_telegram,'v':cmd_version,'t':cmd_test}
+		commands = {'config':cmd_config,'help':cmd_help,'scan':cmd_auto_scan,'add-man':cmd_add_man,'add-auto':cmd_add_auto,'list':cmd_list,'remove':cmd_remove,'reset':cmd_reset,'log':cmd_log,'get-last':cmd_last,'redl':cmd_redown,'redl-all':cmd_redown_all,'test-telegram':cmd_test_telegram,'version':cmd_version,'test':cmd_test,'get-link':cmd_link}
+		alias_commands = {'c':cmd_config,'h':cmd_help,'am':cmd_add_man,'aa':cmd_add_auto,'s':cmd_auto_scan,'l':cmd_list,'r':cmd_remove,'rs':cmd_reset,'lg':cmd_log,'gla':cmd_last,'re':cmd_redown,'ra':cmd_redown_all,'tt':cmd_test_telegram,'v':cmd_version,'t':cmd_test,'gli':cmd_link}
 		try:
 			if search(r'^[\-]{2}',sys.argv[1]) and sys.argv[1][2:] in commands: commands[sys.argv[1][2:]](sys.argv[2:])
 			elif search(r'^[\-]{1}[a-z]+',sys.argv[1]) and sys.argv[1][1:] in alias_commands: alias_commands[sys.argv[1][1:]](sys.argv[2:])
