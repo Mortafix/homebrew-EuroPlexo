@@ -1,4 +1,7 @@
-# EuroPlexo ITA
+# [OUTDATED] EuroPlexo ITA
+
+### ATTENZIONE  
+Questo progetto non è più mantenuto, puoi trovare la nuova versione [QUI](https://github.com/Mortafix/EuroPlexo).
 
 Script in Python per scaricare automaticamente e in background le nuove puntate di serie tv, in cartelle specifiche e ordinate. Compatibile con Plex e altri sistemi di Media Center.
 
